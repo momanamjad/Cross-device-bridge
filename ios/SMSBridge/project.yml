@@ -1,0 +1,15 @@
+name: SMSBridge
+options:
+  bundleIdPrefix: com.momanamjad
+targets:
+  SMSBridge:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: SMSBridge
+    settings:
+      INFOPLIST_FILE: SMSBridge/Info.plist
+      PRODUCT_BUNDLE_IDENTIFIER: com.momanamjad.smsbridge
+      MARKETING_VERSION: 1.0.0
+      CURRENT_PROJECT_VERSION: 1
