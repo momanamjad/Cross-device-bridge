@@ -1,0 +1,8 @@
+platform :ios, '17.0'
+
+target 'SMSBridge' do
+  use_frameworks!
+
+  pod 'WebRTC', '~> 119.0.0'
+  pod 'Socket.IO-Client-Swift', '~> 16.1.0'
+end

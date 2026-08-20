@@ -1,0 +1,8 @@
+<resources>
+    <style name="Theme.DeviceBridge" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/bridge_accent</item>
+        <item name="android:statusBarColor">@color/bridge_bg</item>
+        <item name="android:navigationBarColor">@color/bridge_bg</item>
+        <item name="android:windowBackground">@color/bridge_bg</item>
+    </style>
+</resources>

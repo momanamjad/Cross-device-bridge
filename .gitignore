@@ -1,0 +1,48 @@
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.iml
+.cursor/
+
+# Env / secrets
+.env
+.env.local
+*.pem
+*.keystore
+local.properties
+
+# Node
+node_modules/
+dist/
+build/
+coverage/
+*.log
+.npm/
+
+# Prisma
+backend/prisma/*.db
+backend/prisma/*.db-journal
+
+# Android
+android/.gradle/
+android/app/build/
+android/build/
+android/captures/
+android/.cxx/
+android/app/release/
+*.apk
+*.aab
+android/local.properties
+android/app/release.keystore
+
+# Frontend
+frontend/dev-dist/
+frontend/dist/
+
+# Misc
+*.swp
+.turbo/
+android/jdk17/
+android/jdk17.zip

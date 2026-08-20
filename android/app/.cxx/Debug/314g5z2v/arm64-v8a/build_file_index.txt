@@ -1,0 +1,1 @@
+C:\Users\DELL\Desktop\device bridge\android\app\src\main\cpp\CMakeLists.txt

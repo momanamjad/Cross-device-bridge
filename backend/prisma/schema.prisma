@@ -1,0 +1,112 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Device {
+  id         String             @id @default(uuid())
+  externalId String             @unique @map("device_id")
+  deviceName String             @map("device_name")
+  deviceType String             @map("device_type")
+  osVersion  String             @default("") @map("os_version")
+  tokenHash  String             @map("token_hash")
+  isActive   Boolean            @default(true) @map("is_active")
+  lastSeen   DateTime           @updatedAt @map("last_seen")
+  createdAt  DateTime           @default(now()) @map("created_at")
+  messages   Message[]
+  calls      CallNotification[]
+
+  @@index([isActive, lastSeen])
+  @@map("devices")
+}
+
+model Message {
+  id        String    @id @default(uuid())
+  deviceId  String    @map("device_id")
+  device    Device    @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  sender    String
+  content   String
+  timestamp DateTime
+  synced    Boolean   @default(false)
+  syncedAt  DateTime? @map("synced_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@index([deviceId, timestamp(sort: Desc)])
+  @@index([synced, createdAt])
+  @@index([sender, deviceId])
+  @@map("messages")
+}
+
+model CallNotification {
+  id        String    @id @default(uuid())
+  deviceId  String    @map("device_id")
+  device    Device    @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  caller    String
+  callState String    @map("call_state")
+  timestamp DateTime
+  duration  Int       @default(0)
+  synced    Boolean   @default(false)
+  syncedAt  DateTime? @map("synced_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@index([deviceId, timestamp(sort: Desc)])
+  @@index([synced, createdAt])
+  @@index([caller, deviceId])
+  @@map("call_notifications")
+}
+
+model Call {
+  id String @id @default(cuid())
+  
+  // Call participants
+  initiator_device String // "realme_c3_1" or "iphone"
+  initiator_number String? // for outgoing calls
+  receiver_number String? // phone number called/calling
+  
+  // Call state
+  state String // RINGING, CONNECTING, CONNECTED, ENDED, FAILED
+  is_incoming Boolean
+  
+  // Timestamps
+  started_at DateTime @default(now())
+  ended_at DateTime?
+  
+  // Duration
+  duration_seconds Int @default(0)
+  
+  // WebRTC details
+  call_sid String? // unique call identifier
+  
+  // Call quality
+  connected_successfully Boolean @default(false)
+  
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([state])
+  @@index([started_at])
+  @@index([initiator_device])
+  @@map("calls")
+}
+
+model IceCandidate {
+  id String @id @default(cuid())
+  call_id String
+  
+  candidate String
+  sdp_mid String?
+  sdp_mline_index Int?
+  
+  from_device String // "realme" or "iphone"
+  
+  created_at DateTime @default(now())
+  
+  @@map("ice_candidates")
+}

@@ -1,0 +1,6 @@
+<resources>
+    <color name="bridge_bg">#0B1220</color>
+    <color name="bridge_surface">#151C2C</color>
+    <color name="bridge_accent">#5EEAD4</color>
+    <color name="bridge_text">#E5E7EB</color>
+</resources>

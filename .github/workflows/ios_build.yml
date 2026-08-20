@@ -1,0 +1,57 @@
+name: Build iOS App
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch: # Allows manual trigger from the GitHub web UI
+
+jobs:
+  build:
+    name: Build iOS and Package IPA
+    runs-on: macos-13
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Ruby & CocoaPods
+        run: |
+          sudo gem install cocoapods
+          pod --version
+
+      - name: Install Pods
+        run: |
+          cd ios/SMSBridge
+          pod install
+
+      - name: Build for iOS Device (Unsigned)
+        run: |
+          cd ios/SMSBridge
+          xcodebuild -workspace SMSBridge.xcworkspace \
+                     -scheme SMSBridge \
+                     -sdk iphoneos \
+                     -configuration Debug \
+                     -derivedDataPath build \
+                     clean build \
+                     CODE_SIGN_IDENTITY="" \
+                     CODE_SIGNING_REQUIRED=NO \
+                     CODE_SIGNING_ALLOWED=NO
+
+      - name: Package into IPA
+        run: |
+          mkdir -p build-output/Payload
+          # Copy the compiled .app bundle into the Payload folder
+          cp -R ios/SMSBridge/build/Build/Products/Debug-iphoneos/SMSBridge.app build-output/Payload/
+          cd build-output
+          # Zip the Payload directory
+          zip -r SMSBridge-Unsigned.ipa Payload
+          # Clean up Payload folder
+          rm -rf Payload
+
+      - name: Upload Unsigned IPA
+        uses: actions/upload-artifact@v3
+        with:
+          name: ios-app-unsigned
+          path: build-output/SMSBridge-Unsigned.ipa

@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">Device Bridge</string>
+    <string name="channel_name">Bridge status</string>
+    <string name="channel_desc">Shows that SMS and call forwarding is running</string>
+    <string name="fg_title">SMS Bridge running</string>
+    <string name="fg_text">Forwarding SMS and calls to your backend</string>
+    <string name="open_settings">Open settings</string>
+    <string name="grant_permissions">Grant permissions</string>
+    <string name="start_bridge">Start bridge</string>
+    <string name="stop_bridge">Stop bridge</string>
+    <string name="permissions_needed">Grant SMS, phone, and notification permissions so forwarding can work.</string>
+    <string name="backend_url">Backend URL</string>
+    <string name="api_token">API token</string>
+    <string name="register_secret">Register secret</string>
+    <string name="device_id">Device ID</string>
+    <string name="enable_sms">Enable SMS forwarding</string>
+    <string name="enable_calls">Enable call forwarding</string>
+    <string name="test_connection">Test connection</string>
+    <string name="register_device">Register device</string>
+    <string name="sync_now">Sync now</string>
+    <string name="clear_database">Clear local database</string>
+    <string name="save">Save</string>
+</resources>

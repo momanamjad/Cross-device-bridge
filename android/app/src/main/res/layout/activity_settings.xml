@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bridge_bg">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Settings"
+            android:textColor="@color/bridge_text"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/backendUrl"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:hint="@string/backend_url"
+            android:inputType="textUri"
+            android:textColor="@color/bridge_text"
+            android:textColorHint="#9CA3AF" />
+
+        <EditText
+            android:id="@+id/deviceId"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/device_id"
+            android:inputType="text"
+            android:textColor="@color/bridge_text"
+            android:textColorHint="#9CA3AF" />
+
+        <EditText
+            android:id="@+id/registerSecret"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/register_secret"
+            android:inputType="textPassword"
+            android:textColor="@color/bridge_text"
+            android:textColorHint="#9CA3AF" />
+
+        <EditText
+            android:id="@+id/apiToken"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/api_token"
+            android:inputType="textPassword"
+            android:textColor="@color/bridge_text"
+            android:textColorHint="#9CA3AF" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/smsEnabled"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/enable_sms"
+            android:textColor="@color/bridge_text" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/callsEnabled"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/enable_calls"
+            android:textColor="@color/bridge_text" />
+
+        <TextView
+            android:id="@+id/syncStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:textColor="@color/bridge_text" />
+
+        <Button
+            android:id="@+id/save"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/save" />
+
+        <Button
+            android:id="@+id/register"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/register_device" />
+
+        <Button
+            android:id="@+id/testConnection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/test_connection" />
+
+        <Button
+            android:id="@+id/syncNow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/sync_now" />
+
+        <Button
+            android:id="@+id/clearDb"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/clear_database" />
+    </LinearLayout>
+</ScrollView>

@@ -1,0 +1,4 @@
+# ninja log v5
+2	21747	8089265228631889	CMakeFiles/node-bridge.dir/native-lib.cpp.o	f9d5bd404221be67
+11	2499	8089266454976238	CMakeFiles/node-bridge.dir/native-lib.cpp.o	f9d5bd404221be67
+2500	2934	8089266459345328	C:/Users/DELL/Desktop/device bridge/android/app/build/intermediates/cxx/Debug/314g5z2v/obj/arm64-v8a/libnode-bridge.so	85cf2f980829d773
