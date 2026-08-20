@@ -33,7 +33,7 @@ jobs:
       - name: Install Pods
         run: |
           cd ios/SMSBridge
-          pod install
+          pod install --repo-update
 
       - name: Build for iOS Device (Unsigned)
         run: |
