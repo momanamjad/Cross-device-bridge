@@ -97,8 +97,8 @@ class WebSocketService: ObservableObject {
         socket?.connect()
     }
     
-    func emit(_ event: String, _ items: Any) {
-        socket?.emit(event, with: [items])
+    func emit(_ event: String, _ items: SocketData) {
+        socket?.emit(event, with: [items], completion: nil)
     }
     
     func disconnect() {
