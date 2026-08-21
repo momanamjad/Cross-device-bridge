@@ -16,7 +16,7 @@ export const smsSchema = z.object({
 
 export const callSchema = z.object({
   caller: z.string().min(1).max(64),
-  state: z.enum(["RINGING", "OFFHOOK", "IDLE"]),
+  state: z.enum(["RINGING", "OFFHOOK", "IDLE", "INCOMING", "OUTGOING", "MISSED"]),
   timestamp: z.number().int().positive(),
   device_id: z.string().min(1).max(128),
   duration: z.number().int().min(0).optional().default(0),

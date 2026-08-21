@@ -89,6 +89,19 @@ export async function createCall(
   }
 }
 
+async function getTargetDeviceId(req: Request): Promise<string> {
+  const device = deviceOf(req);
+  if (device.deviceType === "ios") {
+    const androidDevice = await prisma.device.findFirst({
+      where: { deviceType: "android", isActive: true },
+    });
+    if (androidDevice) {
+      return androidDevice.id;
+    }
+  }
+  return device.id;
+}
+
 export async function listMessages(
   req: Request,
   res: Response,
@@ -96,8 +109,9 @@ export async function listMessages(
 ): Promise<void> {
   try {
     const query = listQuerySchema.parse(req.query);
+    const targetDeviceId = await getTargetDeviceId(req);
     const where = {
-      deviceId: deviceOf(req).id,
+      deviceId: targetDeviceId,
       ...(query.synced === undefined ? {} : { synced: query.synced }),
     };
 
@@ -137,8 +151,9 @@ export async function listCalls(
 ): Promise<void> {
   try {
     const query = listQuerySchema.parse(req.query);
+    const targetDeviceId = await getTargetDeviceId(req);
     const where = {
-      deviceId: deviceOf(req).id,
+      deviceId: targetDeviceId,
       ...(query.synced === undefined ? {} : { synced: query.synced }),
     };
 
@@ -178,8 +193,9 @@ export async function confirmMessage(
 ): Promise<void> {
   try {
     const id = req.params.id;
+    const targetDeviceId = await getTargetDeviceId(req);
     const result = await prisma.message.updateMany({
-      where: { id, deviceId: deviceOf(req).id },
+      where: { id, deviceId: targetDeviceId },
       data: { synced: true, syncedAt: new Date() },
     });
     if (result.count === 0) {
@@ -198,8 +214,9 @@ export async function confirmCall(
 ): Promise<void> {
   try {
     const id = req.params.id;
+    const targetDeviceId = await getTargetDeviceId(req);
     const result = await prisma.callNotification.updateMany({
-      where: { id, deviceId: deviceOf(req).id },
+      where: { id, deviceId: targetDeviceId },
       data: { synced: true, syncedAt: new Date() },
     });
     if (result.count === 0) {
