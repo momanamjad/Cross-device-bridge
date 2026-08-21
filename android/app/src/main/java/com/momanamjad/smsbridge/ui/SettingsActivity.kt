@@ -28,6 +28,7 @@ class SettingsActivity : AppCompatActivity() {
         binding.save.setOnClickListener {
             persistFields()
             toast("Saved")
+            com.momanamjad.smsbridge.sync.SocketManager.connect()
         }
         binding.register.setOnClickListener {
             persistFields()
@@ -35,6 +36,7 @@ class SettingsActivity : AppCompatActivity() {
                 vm.register().onSuccess {
                     binding.apiToken.setText(vm.settings.apiToken)
                     toast("Registered")
+                    com.momanamjad.smsbridge.sync.SocketManager.connect()
                 }.onFailure { toast(it.message ?: "Register failed") }
             }
         }

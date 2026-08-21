@@ -57,6 +57,7 @@ class MainActivity : AppCompatActivity() {
         val intent = Intent(this, BridgeForegroundService::class.java)
         ContextCompat.startForegroundService(this, intent)
         binding.status.text = "Bridge service started. Keep the status notification visible."
+        com.momanamjad.smsbridge.sync.SocketManager.connect()
     }
 
     private fun hasPermission(permission: String): Boolean =
