@@ -59,6 +59,7 @@ Java_com_momanamjad_smsbridge_service_NodeJsServerService_nodeJsStart(
 
     // Start a thread to read from the pipe and log to Android logcat
     log_thread = std::thread(start_logger_thread);
+    log_thread.detach(); // Detach to prevent terminate() exception
 
     jsize argc = env->GetArrayLength(argsObj);
     std::vector<std::string> argsStr;
@@ -75,6 +76,7 @@ Java_com_momanamjad_smsbridge_service_NodeJsServerService_nodeJsStart(
     for (auto& arg : argsStr) {
         argv.push_back(&arg[0]);
     }
+    argv.push_back(nullptr); // Null-terminate argv according to standards
 
     // Start Node.js using the correct namespace function
     node::Start(argc, argv.data());

@@ -151,7 +151,7 @@ export async function handleStatsRest(
     });
 
     const totalToday = callsToday.length;
-    const totalDuration = callsToday.reduce((sum, c) => sum + c.duration_seconds, 0);
+    const totalDuration = callsToday.reduce((sum: number, c: any) => sum + c.duration_seconds, 0);
     const avgDuration = totalToday > 0 ? Math.round(totalDuration / totalToday) : 0;
 
     res.status(200).json({

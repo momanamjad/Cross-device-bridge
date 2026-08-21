@@ -2,7 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import { prisma } from "../config/database";
 import { HttpError } from "./errorHandler";
 import { hashToken } from "../lib/crypto";
-import type { Device } from "@prisma/client";
+import type { Device } from "../config/database";
 
 export type AuthedRequest = Request & { device: Device };
 
