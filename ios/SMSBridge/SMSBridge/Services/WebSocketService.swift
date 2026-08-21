@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 import SocketIO
 
 class WebSocketService: ObservableObject {
@@ -97,7 +98,7 @@ class WebSocketService: ObservableObject {
     }
     
     func emit(_ event: String, _ items: SocketData) {
-        socket?.emit(event, items)
+        socket?.emit(event, with: [items])
     }
     
     func disconnect() {
