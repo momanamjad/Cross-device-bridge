@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <android/log.h>
 #include <thread>
+#include <fstream>
 
 #define LOG_TAG "NodeJS-Native"
 
@@ -15,14 +16,23 @@ namespace node {
 // Pipe file descriptors and reading thread
 int pfd[2];
 std::thread log_thread;
+std::string log_file_path;
 
 void start_logger_thread() {
     ssize_t rsize;
     char buf[1024];
-    // Read from the pipe and print to Android logcat
+    std::ofstream log_file;
+    if (!log_file_path.empty()) {
+        log_file.open(log_file_path, std::ios::out | std::ios::app);
+    }
+    // Read from the pipe and print to Android logcat and log file
     while ((rsize = read(pfd[0], buf, sizeof(buf) - 1)) > 0) {
         buf[rsize] = '\0';
         __android_log_print(ANDROID_LOG_INFO, LOG_TAG, "%s", buf);
+        if (log_file.is_open()) {
+            log_file << buf;
+            log_file.flush();
+        }
     }
 }
 
@@ -30,7 +40,13 @@ extern "C" JNIEXPORT void JNICALL
 Java_com_momanamjad_smsbridge_service_NodeJsServerService_nodeJsStart(
         JNIEnv* env,
         jobject /* this */,
-        jobjectArray argsObj) {
+        jobjectArray argsObj,
+        jstring logPathObj) {
+
+    // Retrieve log file path
+    const char* logPathChars = env->GetStringUTFChars(logPathObj, nullptr);
+    log_file_path = logPathChars;
+    env->ReleaseStringUTFChars(logPathObj, logPathChars);
 
     // Set stdout and stderr to line-buffered mode
     setvbuf(stdout, nullptr, _IOLBF, 0);

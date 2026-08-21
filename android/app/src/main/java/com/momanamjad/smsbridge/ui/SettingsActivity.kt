@@ -61,6 +61,32 @@ class SettingsActivity : AppCompatActivity() {
                 toast("Local database cleared")
             }
         }
+        binding.viewLogs.setOnClickListener {
+            val logFile = java.io.File(filesDir, "node_out.txt")
+            val logs = if (logFile.exists()) {
+                logFile.readText()
+            } else {
+                "No logs found. Is the server running?"
+            }
+            val scrollView = android.widget.ScrollView(this)
+            val textView = android.widget.TextView(this).apply {
+                text = logs
+                textSize = 14f
+                setPadding(30, 30, 30, 30)
+                setTextColor(android.graphics.Color.BLACK)
+            }
+            scrollView.addView(textView)
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Server Logs")
+                .setView(scrollView)
+                .setPositiveButton("OK", null)
+                .setNeutralButton("Clear") { _, _ ->
+                    if (logFile.exists()) {
+                        logFile.writeText("")
+                    }
+                }
+                .show()
+        }
     }
 
     private fun persistFields() {

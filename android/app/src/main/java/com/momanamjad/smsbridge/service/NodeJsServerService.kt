@@ -26,7 +26,8 @@ class NodeJsServerService : Service() {
     private fun startNodeJsServer() {
         nodeJsThread = Thread {
             try {
-                // Load Node.js engine and native bridge libraries
+                // Load C++ shared standard library, Node.js engine and native bridge libraries
+                System.loadLibrary("c++_shared")
                 System.loadLibrary("node")
                 System.loadLibrary("node-bridge")
 
@@ -54,7 +55,8 @@ class NodeJsServerService : Service() {
                 val mainScript = File(targetDir, "dist/server.js").absolutePath
                 val args = arrayOf("node", mainScript)
                 Log.i(TAG, "Starting Node.js engine with: ${args.joinToString(" ")}")
-                nodeJsStart(args)
+                val logFile = File(filesDir, "node_out.txt")
+                nodeJsStart(args, logFile.absolutePath)
             } catch (e: Throwable) {
                 Log.e(TAG, "Fatal error running Node.js server", e)
                 Handler(Looper.getMainLooper()).post {
@@ -134,7 +136,7 @@ class NodeJsServerService : Service() {
         super.onDestroy()
     }
 
-    private external fun nodeJsStart(args: Array<String>)
+    private external fun nodeJsStart(args: Array<String>, logFilePath: String)
 
     companion object {
         private const val TAG = "NodeJsServerService"

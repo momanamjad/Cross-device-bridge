@@ -107,5 +107,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/clear_database" />
+
+        <Button
+            android:id="@+id/viewLogs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="View Server Logs" />
     </LinearLayout>
 </ScrollView>
