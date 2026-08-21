@@ -44,9 +44,9 @@ jobs:
                      -configuration Debug \
                      -derivedDataPath build \
                      clean build \
-                     CODE_SIGN_IDENTITY="-" \
+                     CODE_SIGN_IDENTITY="" \
                      CODE_SIGNING_REQUIRED=NO \
-                     CODE_SIGNING_ALLOWED=YES \
+                     CODE_SIGNING_ALLOWED=NO \
                      EAGER_LINKING=NO
 
       - name: Package into IPA
