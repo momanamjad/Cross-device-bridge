@@ -1,13 +1,21 @@
 package com.momanamjad.smsbridge.service
 
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.content.res.AssetManager
-import android.os.IBinder
-import android.util.Log
+import android.os.Build
 import android.os.Handler
+import android.os.IBinder
 import android.os.Looper
+import android.util.Log
 import android.widget.Toast
+import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat
 import com.momanamjad.smsbridge.BridgeApp
 import java.io.File
 import java.io.FileOutputStream
@@ -19,7 +27,19 @@ class NodeJsServerService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        Log.i(TAG, "Starting Node.js Server Service...")
+        Log.i(TAG, "Starting Node.js Server Service as Foreground...")
+        createNotificationChannel()
+        val notification = buildForegroundNotification()
+        if (Build.VERSION.SDK_INT >= 34) {
+            ServiceCompat.startForeground(
+                this,
+                NOTIFICATION_ID,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            )
+        } else {
+            startForeground(NOTIFICATION_ID, notification)
+        }
         startNodeJsServer()
     }
 
@@ -131,6 +151,36 @@ class NodeJsServerService : Service() {
         }
     }
 
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                "NodeJS Backend Service",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Keeps the local Node.js bridge server running"
+            }
+            nm.createNotificationChannel(channel)
+        }
+    }
+
+    private fun buildForegroundNotification(): Notification {
+        val launch = PendingIntent.getActivity(
+            this,
+            0,
+            Intent(this, com.momanamjad.smsbridge.ui.MainActivity::class.java),
+            PendingIntent.FLAG_IMMUTABLE
+        )
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(com.momanamjad.smsbridge.R.drawable.ic_launcher_foreground)
+            .setContentTitle("SMS Bridge Backend Running")
+            .setContentText("Local server is listening on port 9000")
+            .setOngoing(true)
+            .setContentIntent(launch)
+            .build()
+    }
+
     override fun onDestroy() {
         Log.i(TAG, "Stopping Node.js Server Service...")
         nodeJsThread?.interrupt()
@@ -141,5 +191,7 @@ class NodeJsServerService : Service() {
 
     companion object {
         private const val TAG = "NodeJsServerService"
+        private const val CHANNEL_ID = "nodejs_server_channel"
+        private const val NOTIFICATION_ID = 43
     }
 }

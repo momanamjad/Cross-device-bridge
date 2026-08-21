@@ -23,8 +23,9 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Start Node.js backend service
-        startService(Intent(this, com.momanamjad.smsbridge.service.NodeJsServerService::class.java))
+        // Start Node.js backend service as foreground service
+        val nodeJsIntent = Intent(this, com.momanamjad.smsbridge.service.NodeJsServerService::class.java)
+        androidx.core.content.ContextCompat.startForegroundService(this, nodeJsIntent)
 
         binding.grantPermissions.setOnClickListener { requestNeededPermissions() }
         binding.startBridge.setOnClickListener { startBridge() }
