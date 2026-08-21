@@ -29,7 +29,7 @@ class WebSocketService: ObservableObject {
             .compress,
             .connectParams(["token": token]),
             .reconnects(true),
-            .reconnectDelay(2)
+            .reconnectWait(2)
         ])
         
         socket = manager?.defaultSocket
