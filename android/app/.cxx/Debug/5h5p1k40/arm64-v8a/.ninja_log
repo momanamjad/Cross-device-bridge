@@ -16,3 +16,6 @@
 0	16	0	clean	abe8c54e830357b6
 121	10862	8090085444367701	CMakeFiles/node-bridge.dir/native-lib.cpp.o	f9d5bd404221be67
 10863	11278	8090085448596121	C:/Users/DELL/Desktop/device bridge/android/app/build/intermediates/cxx/Debug/5h5p1k40/obj/arm64-v8a/libnode-bridge.so	1f116afc590d344b
+1	31	0	clean	abe8c54e830357b6
+85	8297	8090095392910760	CMakeFiles/node-bridge.dir/native-lib.cpp.o	f9d5bd404221be67
+8328	9592	8090095406368643	C:/Users/DELL/Desktop/device bridge/android/app/build/intermediates/cxx/Debug/5h5p1k40/obj/arm64-v8a/libnode-bridge.so	1f116afc590d344b

@@ -84,6 +84,7 @@ class NodeJsServerService : Service() {
             REGISTER_SECRET=$secret
             CORS_ORIGIN=*
             LOG_LEVEL=info
+            LOG_FILE_PATH=${File(filesDir, "node_out.txt").absolutePath}
         """.trimIndent()
         
         envFile.writeText(content)

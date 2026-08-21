@@ -4,6 +4,31 @@ import { prisma } from "./config/database";
 import { createApp } from "./app";
 import { initSocket } from "./services/socketService";
 import { logger } from "./lib/logger";
+import fs from "fs";
+
+if (process.env.LOG_FILE_PATH) {
+  const logFilePath = process.env.LOG_FILE_PATH;
+  const writeLog = (msg: string) => {
+    try {
+      fs.appendFileSync(logFilePath, `[${new Date().toISOString()}] ${msg}\n`, "utf8");
+    } catch (e) {
+      // Ignore file writing errors
+    }
+  };
+
+  console.log = (...args) => writeLog(args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '));
+  console.error = (...args) => writeLog("[ERROR] " + args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '));
+  console.warn = (...args) => writeLog("[WARN] " + args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '));
+
+  process.on("uncaughtException", (err) => {
+    writeLog(`[FATAL] Uncaught Exception: ${err?.stack || err}`);
+    process.exit(1);
+  });
+
+  process.on("unhandledRejection", (reason) => {
+    writeLog(`[FATAL] Unhandled Rejection: ${reason}`);
+  });
+}
 
 async function main() {
   const app = createApp();
