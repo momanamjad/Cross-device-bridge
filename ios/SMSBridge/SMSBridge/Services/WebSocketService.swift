@@ -91,13 +91,13 @@ class WebSocketService: ObservableObject {
             self?.onSMSReceived?(message)
             
             // Confirm message receipt to server
-            self?.socket?.emit("message:confirm", ["id": id])
+            self?.emit("message:confirm", ["id": id])
         }
         
         socket?.connect()
     }
     
-    func emit(_ event: String, _ items: SocketData) {
+    func emit(_ event: String, _ items: Any) {
         socket?.emit(event, with: [items])
     }
     
