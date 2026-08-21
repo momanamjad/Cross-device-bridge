@@ -18,6 +18,12 @@ android {
         ndk {
             abiFilters.addAll(setOf("arm64-v8a", "armeabi-v7a"))
         }
+
+        externalNativeBuild {
+            cmake {
+                arguments("-DANDROID_STL=c++_shared")
+            }
+        }
     }
 
     externalNativeBuild {
