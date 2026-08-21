@@ -21,6 +21,9 @@ interface SmsDao {
     @Query("SELECT COUNT(*) FROM sms_messages WHERE synced = 0")
     suspend fun pendingCount(): Int
 
+    @Query("SELECT EXISTS(SELECT 1 FROM sms_messages WHERE sender = :sender AND message = :message AND timestamp = :timestamp LIMIT 1)")
+    suspend fun exists(sender: String, message: String, timestamp: Long): Boolean
+
     @Query("DELETE FROM sms_messages")
     suspend fun clear()
 }

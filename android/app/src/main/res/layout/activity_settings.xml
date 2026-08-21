@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bridge_bg">
@@ -8,110 +9,286 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="20dp">
+        android:padding="16dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="24dp"
             android:text="Settings"
             android:textColor="@color/bridge_text"
-            android:textSize="24sp"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-black" />
+
+        <!-- Card 1: Server Configuration -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginBottom="6dp"
+            android:text="SERVER CONFIGURATION"
+            android:textColor="#9CA3AF"
+            android:textSize="12sp"
             android:textStyle="bold" />
 
-        <EditText
-            android:id="@+id/backendUrl"
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:hint="@string/backend_url"
-            android:inputType="textUri"
-            android:textColor="@color/bridge_text"
-            android:textColorHint="#9CA3AF" />
+            android:layout_marginBottom="20dp"
+            app:cardCornerRadius="12dp"
+            app:cardBackgroundColor="@color/bridge_surface"
+            app:strokeWidth="0dp">
 
-        <EditText
-            android:id="@+id/deviceId"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="@string/device_id"
-            android:inputType="text"
-            android:textColor="@color/bridge_text"
-            android:textColorHint="#9CA3AF" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
 
-        <EditText
-            android:id="@+id/registerSecret"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="@string/register_secret"
-            android:inputType="textPassword"
-            android:textColor="@color/bridge_text"
-            android:textColorHint="#9CA3AF" />
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Backend Server URL"
+                    app:boxStrokeColor="@color/bridge_accent"
+                    app:hintTextColor="@color/bridge_accent"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-        <EditText
-            android:id="@+id/apiToken"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="@string/api_token"
-            android:inputType="textPassword"
-            android:textColor="@color/bridge_text"
-            android:textColorHint="#9CA3AF" />
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/backendUrl"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textUri"
+                        android:textColor="@color/bridge_text" />
+                </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.switchmaterial.SwitchMaterial
-            android:id="@+id/smsEnabled"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="@string/enable_sms"
-            android:textColor="@color/bridge_text" />
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:hint="Device Identifier"
+                    app:boxStrokeColor="@color/bridge_accent"
+                    app:hintTextColor="@color/bridge_accent"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-        <com.google.android.material.switchmaterial.SwitchMaterial
-            android:id="@+id/callsEnabled"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/enable_calls"
-            android:textColor="@color/bridge_text" />
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/deviceId"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="text"
+                        android:textColor="@color/bridge_text" />
+                </com.google.android.material.textfield.TextInputLayout>
 
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Card 2: Security & Authentication -->
         <TextView
-            android:id="@+id/syncStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginBottom="6dp"
+            android:text="SECURITY &amp; AUTHENTICATION"
+            android:textColor="#9CA3AF"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:textColor="@color/bridge_text" />
+            android:layout_marginBottom="20dp"
+            app:cardCornerRadius="12dp"
+            app:cardBackgroundColor="@color/bridge_surface"
+            app:strokeWidth="0dp">
 
-        <Button
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Register Secret"
+                    app:boxStrokeColor="@color/bridge_accent"
+                    app:hintTextColor="@color/bridge_accent"
+                    app:passwordToggleEnabled="true"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/registerSecret"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textPassword"
+                        android:textColor="@color/bridge_text" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:hint="API Access Token"
+                    app:boxStrokeColor="@color/bridge_accent"
+                    app:hintTextColor="@color/bridge_accent"
+                    app:passwordToggleEnabled="true"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/apiToken"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textPassword"
+                        android:textColor="@color/bridge_text" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Card 3: Features & Services -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginBottom="6dp"
+            android:text="FORWARDING CONFIGURATION"
+            android:textColor="#9CA3AF"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            app:cardCornerRadius="12dp"
+            app:cardBackgroundColor="@color/bridge_surface"
+            app:strokeWidth="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/smsEnabled"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Forward SMS Messages"
+                    android:textColor="@color/bridge_text"
+                    android:textSize="16sp" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#2E3748"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp" />
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/callsEnabled"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Forward Call Logs &amp; Events"
+                    android:textColor="@color/bridge_text"
+                    android:textSize="16sp" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Card 4: Synchronization Status -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            app:cardCornerRadius="12dp"
+            app:cardBackgroundColor="@color/bridge_surface"
+            app:strokeWidth="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/syncStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/bridge_text"
+                    android:textSize="14sp"
+                    android:fontFamily="sans-serif-medium" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Configuration Management Buttons -->
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/save"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="@string/save" />
+            android:layout_height="50dp"
+            android:layout_marginBottom="8dp"
+            android:text="Save Configurations"
+            android:textStyle="bold"
+            app:cornerRadius="10dp"
+            app:backgroundTint="@color/bridge_accent"
+            android:textColor="@color/bridge_bg" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/register"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/register_device" />
+            android:layout_height="50dp"
+            android:layout_marginBottom="8dp"
+            android:text="Register This Device"
+            android:textStyle="bold"
+            app:cornerRadius="10dp"
+            app:backgroundTint="@color/bridge_surface"
+            android:textColor="@color/bridge_text" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/testConnection"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/test_connection" />
+            android:layout_height="50dp"
+            android:layout_marginBottom="8dp"
+            android:text="Test Server Connection"
+            android:textStyle="bold"
+            app:cornerRadius="10dp"
+            app:backgroundTint="@color/bridge_surface"
+            android:textColor="@color/bridge_text" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/syncNow"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/sync_now" />
+            android:layout_height="50dp"
+            android:layout_marginBottom="8dp"
+            android:text="Sync History Now"
+            android:textStyle="bold"
+            app:cornerRadius="10dp"
+            app:backgroundTint="@color/bridge_surface"
+            android:textColor="@color/bridge_text" />
 
-        <Button
-            android:id="@+id/clearDb"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/clear_database" />
-
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/viewLogs"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="View Server Logs" />
+            android:layout_height="50dp"
+            android:layout_marginBottom="8dp"
+            android:text="View Server Logs"
+            android:textStyle="bold"
+            app:cornerRadius="10dp"
+            app:backgroundTint="@color/bridge_surface"
+            android:textColor="@color/bridge_text" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/clearDb"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginBottom="40dp"
+            android:text="Clear Local Database"
+            android:textStyle="bold"
+            app:cornerRadius="10dp"
+            app:backgroundTint="#EF4444"
+            android:textColor="@color/bridge_text" />
+
     </LinearLayout>
 </ScrollView>

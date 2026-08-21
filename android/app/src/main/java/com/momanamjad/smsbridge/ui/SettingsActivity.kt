@@ -87,6 +87,12 @@ class SettingsActivity : AppCompatActivity() {
                         logFile.writeText("")
                     }
                 }
+                .setNegativeButton("Copy") { _, _ ->
+                    val clipboard = getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                    val clip = android.content.ClipData.newPlainText("Server Logs", logs)
+                    clipboard.setPrimaryClip(clip)
+                    toast("Logs copied to clipboard")
+                }
                 .show()
         }
     }

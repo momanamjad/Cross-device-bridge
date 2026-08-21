@@ -21,6 +21,9 @@ interface CallDao {
     @Query("SELECT COUNT(*) FROM calls WHERE synced = 0")
     suspend fun pendingCount(): Int
 
+    @Query("SELECT EXISTS(SELECT 1 FROM calls WHERE callerNumber = :number AND callState = :state AND timestamp = :timestamp LIMIT 1)")
+    suspend fun exists(number: String, state: String, timestamp: Long): Boolean
+
     @Query("DELETE FROM calls")
     suspend fun clear()
 }
