@@ -4,6 +4,7 @@ import WebRTC
 class WebRTCService: NSObject {
     private var peerConnection: RTCPeerConnection?
     private let factory: RTCPeerConnectionFactory
+    private var audioTrack: RTCAudioTrack?
     
     var onLocalIceCandidate: ((RTCIceCandidate) -> Void)?
     var onAudioTrackAdded: (() -> Void)?
@@ -20,17 +21,46 @@ class WebRTCService: NSObject {
     }
     
     func initializeConnection() {
+        Task {
+            do {
+                try await initialize()
+            } catch {
+                print("❌ Failed to initialize WebRTC connection: \(error)")
+            }
+        }
+    }
+    
+    func initialize() async throws {
+        // 1. Request microphone permission
+        await AudioService.shared.requestMicrophonePermission()
+        
+        // 2. Setup audio session
+        AudioService.shared.setupAudioSession()
+        
+        // 3. Create peer connection with audio constraints
         let config = RTCConfiguration()
         config.sdpSemantics = .unifiedPlan
+        let constraints = RTCMediaConstraints(
+            mandatoryConstraints: ["OfferToReceiveAudio": "true"],
+            optionalConstraints: nil
+        )
         
-        let constraints = RTCMediaConstraints(mandatoryConstraints: nil, optionalConstraints: nil)
+        peerConnection = factory.peerConnection(
+            with: config,
+            constraints: constraints,
+            delegate: self
+        )
         
-        peerConnection = factory.peerConnection(with: config, constraints: constraints, delegate: self)
-        
-        // Setup local audio track and add it to peer connection
+        // 4. Create audio source and track
         let audioSource = factory.audioSource(with: nil)
-        let audioTrack = factory.audioTrack(with: audioSource, trackId: "audio0")
-        peerConnection?.add(audioTrack, streamIds: ["stream0"])
+        audioTrack = factory.audioTrack(with: audioSource, trackId: "audio0")
+        
+        // 5. Add to peer connection with stream ID
+        if let audioTrack = audioTrack {
+            peerConnection?.add(audioTrack, streamIds: ["stream0"])
+        }
+        
+        print("✅ Audio track added to WebRTC peer connection")
     }
     
     func processOfferAndAnswer(sdpOffer: String) async throws -> String {
@@ -88,7 +118,10 @@ extension WebRTCService: RTCPeerConnectionDelegate {
     func peerConnection(_ peerConnection: RTCPeerConnection, didChange stateChanged: RTCSignalingState) {}
     
     func peerConnection(_ peerConnection: RTCPeerConnection, didAdd stream: RTCMediaStream) {
-        if !stream.audioTracks.isEmpty {
+        print("✅ Remote media stream received from Realme")
+        if let audioTrack = stream.audioTracks.first {
+            audioTrack.isEnabled = true
+            print("✅ Remote audio track enabled and playing")
             onAudioTrackAdded?()
         }
     }

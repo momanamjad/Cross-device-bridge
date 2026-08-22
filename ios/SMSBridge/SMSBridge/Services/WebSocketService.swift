@@ -12,7 +12,7 @@ class WebSocketService: ObservableObject {
     
     var onIncomingCall: ((CallInfo) -> Void)?
     var onCallConnected: ((String) -> Void)?
-    var onCallEnded: ((String) -> Void)?
+    var onCallEnded: ((String, TimeInterval) -> Void)?
     var onWebRTCOffer: ((String, String) -> Void)?
     var onICECandidate: ((String, [String: Any]) -> Void)?
     var onSMSReceived: ((SMSMessage) -> Void)?
@@ -64,7 +64,9 @@ class WebSocketService: ObservableObject {
         socket?.on("call:hangup") { [weak self] data, _ in
             guard let dict = data.first as? [String: Any],
                   let callId = dict["call_id"] as? String else { return }
-            self?.onCallEnded?(callId)
+            let duration = dict["duration"] as? Double ?? dict["duration_seconds"] as? Double ?? 0.0
+            print("✅ Call ended event received: \(callId), duration: \(duration)s")
+            self?.onCallEnded?(callId, duration)
         }
         
         socket?.on("webrtc:offer") { [weak self] data, _ in

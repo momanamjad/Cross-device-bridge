@@ -489,12 +489,22 @@ class MockPrisma {
       const db = readDb();
       let list = db.calls;
       if (args.where?.state) {
-        list = list.filter(c => c.state === args.where.state);
+        if (typeof args.where.state === "string") {
+          list = list.filter(c => c.state === args.where.state);
+        } else if (args.where.state.in && Array.isArray(args.where.state.in)) {
+          list = list.filter(c => args.where.state.in.includes(c.state));
+        }
       }
       if (args.where?.created_at?.gte) {
         list = list.filter(c => new Date(c.created_at).getTime() >= new Date(args.where.created_at.gte).getTime());
       }
-      return list.map(mapCall);
+
+      if (args.orderBy?.started_at === "desc") {
+        list.sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime());
+      }
+
+      const take = args.take ?? list.length;
+      return list.slice(0, take).map(mapCall);
     },
 
     async update(args: any) {

@@ -7,6 +7,7 @@ import {
   handleHealthRest,
   handleStatsRest,
   handleTestSignalRest,
+  handleHistoryRest,
 } from "../controllers/webrtcCallsController";
 
 export const webrtcCallsRouter = Router();
@@ -20,3 +21,4 @@ webrtcCallsRouter.post("/outgoing", requireDeviceAuth, handleOutgoingCallRest);
 webrtcCallsRouter.post("/ended", requireDeviceAuth, handleEndedCallRest);
 webrtcCallsRouter.get("/stats", requireDeviceAuth, handleStatsRest);
 webrtcCallsRouter.post("/test-signal", requireDeviceAuth, handleTestSignalRest);
+webrtcCallsRouter.get("/history", requireDeviceAuth, handleHistoryRest);

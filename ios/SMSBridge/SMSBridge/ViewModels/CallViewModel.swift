@@ -12,6 +12,7 @@ class CallViewModel: ObservableObject {
     private var timer: Timer?
     private var callStartTime: Date?
     private var activeCallId: String?
+    private var cancellables = Set<AnyCancellable>()
     
     private let ws = WebSocketService.shared
     private let webrtc = WebRTCService()
@@ -19,6 +20,17 @@ class CallViewModel: ObservableObject {
     init() {
         setupWebSocketListeners()
         setupWebRTCListeners()
+        
+        // Fetch history on app launch
+        fetchCallHistory()
+        
+        // Refresh every 5 seconds
+        Timer.publish(every: 5.0, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                self?.fetchCallHistory()
+            }
+            .store(in: &cancellables)
     }
     
     private func setupWebSocketListeners() {
@@ -41,9 +53,9 @@ class CallViewModel: ObservableObject {
             }
         }
         
-        ws.onCallEnded = { [weak self] _ in
+        ws.onCallEnded = { [weak self] callId, duration in
             DispatchQueue.main.async {
-                self?.cleanupCall()
+                self?.handleCallEnded(callId: callId, duration: duration)
             }
         }
         
@@ -159,5 +171,88 @@ class CallViewModel: ObservableObject {
                 print("Failed to fetch call history: \(error)")
             }
         }
+    }
+
+    private func handleCallEnded(callId: String, duration: TimeInterval) {
+        print("🔴 Handling call ended: \(callId), duration: \(duration)s")
+        
+        // Stop timer
+        timer?.invalidate()
+        timer = nil
+        callDuration = duration
+        
+        // Close WebRTC
+        webrtc.close()
+        AudioService.shared.stopRingtone()
+        
+        // Update state
+        var currentCallInfo: CallInfo? = nil
+        switch callState {
+        case .ringing(let info), .connecting(let info), .connected(let info, _), .ended(let info, _):
+            currentCallInfo = info
+        case .idle:
+            break
+        }
+        
+        callState = .idle
+        activeCallId = nil
+        
+        // Add to history
+        if let callInfo = currentCallInfo {
+            let callRecord = Call(
+                callId: callId,
+                number: callInfo.callerId,
+                name: callInfo.callerName,
+                duration: duration,
+                timestamp: Date(),
+                isIncoming: callInfo.isIncoming
+            )
+            callHistory.insert(callRecord, at: 0)
+        }
+        
+        print("✅ Call ended and recorded in history")
+    }
+
+    @MainActor
+    func fetchCallHistory() {
+        let token = UserDefaults.standard.string(forKey: "api_token") ?? ""
+        let realmIp = UserDefaults.standard.string(forKey: "server_ip") ?? ""
+        let serverPort = UserDefaults.standard.integer(forKey: "server_port")
+        let port = serverPort == 0 ? 9000 : serverPort
+        
+        guard !realmIp.isEmpty else {
+            print("⚠️ No Realme IP configured")
+            return
+        }
+        
+        let url = URL(string: "http://\(realmIp):\(port)/api/calls/history")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            if let error = error {
+                print("❌ Fetch history error: \(error.localizedDescription)")
+                return
+            }
+            
+            guard let data = data else {
+                print("❌ No data received")
+                return
+            }
+            
+            do {
+                let decoder = JSONDecoder()
+                decoder.dateDecodingStrategy = .iso8601
+                let calls = try decoder.decode([Call].self, from: data)
+                
+                DispatchQueue.main.async {
+                    self?.callHistory = calls
+                    print("✅ Call history fetched: \(calls.count) calls")
+                }
+            } catch {
+                print("❌ Decode error: \(error.localizedDescription)")
+            }
+        }.resume()
     }
 }

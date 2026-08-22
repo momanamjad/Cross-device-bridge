@@ -21,12 +21,13 @@
     <key>LSRequiresIPhoneOS</key>
     <true/>
     <key>NSMicrophoneUsageDescription</key>
-    <string>Required to capture your voice for WebRTC calls.</string>
+    <string>Required for voice calls - we need access to your microphone</string>
     <key>NSLocalNetworkUsageDescription</key>
-    <string>Required to connect to the Realme C3 backend server on your local network.</string>
+    <string>Required to connect to Realme backend on local network</string>
     <key>NSBonjourServices</key>
     <array>
         <string>_socketio._tcp</string>
+        <string>_smsbridge._tcp</string>
     </array>
     <key>UIApplicationSceneManifest</key>
     <dict>

@@ -66,6 +66,8 @@ export class WebRTCSignalServer {
       },
     });
 
+    console.log(`[CREATE] Incoming call: ${callId}`);
+
     const activeCall: ActiveCall = {
       id: call.id,
       initiator_device: "realme_c3_1",
@@ -110,6 +112,8 @@ export class WebRTCSignalServer {
       },
     });
 
+    console.log(`[CREATE] Outgoing call: ${callId}`);
+
     const activeCall: ActiveCall = {
       id: call.id,
       initiator_device: "iphone",
@@ -152,6 +156,8 @@ export class WebRTCSignalServer {
       where: { id: callId },
       data: { state: "CONNECTING" },
     });
+
+    console.log(`[STATE] Call ${callId}: CONNECTING`);
 
     // Relay call:accept-ack to Realme
     this.broadcastToDevice("realme_c3_1", "call:accept-ack", { call_id: callId });
@@ -248,6 +254,24 @@ export class WebRTCSignalServer {
     });
   }
 
+  public static async handleWebRtcConnected(callId: string): Promise<void> {
+    logger.info(`WebRTCSignalServer: handleWebRtcConnected callId=${callId}`);
+    const call = this.activeCalls.get(callId);
+    if (call) {
+      call.state = "CONNECTED";
+      call.connected_at = new Date();
+    }
+
+    await prisma.call.update({
+      where: { id: callId },
+      data: {
+        state: "CONNECTED",
+        connected_successfully: true,
+      },
+    });
+    console.log(`[STATE] Call ${callId}: CONNECTED - Audio flowing`);
+  }
+
   public static async handleCallEnd(callId: string, duration?: number): Promise<void> {
     logger.info(`WebRTCSignalServer: handleCallEnd callId=${callId} duration=${duration}`);
     const call = this.activeCalls.get(callId);
@@ -261,25 +285,48 @@ export class WebRTCSignalServer {
       }
     }
 
+    console.log(`[HANGUP] Call ${callId} ended by device`);
+    console.log(`[HANGUP] Duration: ${calculatedDuration} seconds`);
+
     await prisma.call.update({
       where: { id: callId },
       data: {
         state: "ENDED",
         ended_at: new Date(),
         duration_seconds: calculatedDuration,
+        connected_successfully: calculatedDuration > 5,
       },
     });
 
+    console.log(`[DB] Call recorded: ${callId}`);
+
     this.activeCalls.delete(callId);
 
-    // Emit call:hangup to room call_${callId}
     const io = this.getIo();
+
+    // Emit call:ended event to all connected clients in the room
+    io.to(`call_${callId}`).emit("call:ended", {
+      event: "call:ended",
+      call_id: callId,
+      duration: calculatedDuration,
+      timestamp: new Date().toISOString(),
+    });
+    console.log(`[SOCKET] Emitted call:ended to all clients`);
+
+    // Also broadcast to update call history
+    io.emit("call:history-updated", {
+      event: "call:history-updated",
+      call_id: callId,
+      duration: calculatedDuration,
+    });
+    console.log(`[SOCKET] Emitted call:history-updated`);
+
+    // Keep existing events for backward compatibility
     io.to(`call_${callId}`).emit("call:hangup", {
       call_id: callId,
       duration: calculatedDuration,
     });
 
-    // Also send individually to devices if room mapping wasn't joined
     this.broadcastToDevice("realme_c3_1", "call:hangup", {
       call_id: callId,
       duration: calculatedDuration,

@@ -189,3 +189,42 @@ export async function handleTestSignalRest(
     next(err);
   }
 }
+
+export async function handleHistoryRest(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const calls = await prisma.call.findMany({
+      where: {
+        state: { in: ['CONNECTED', 'ENDED', 'FAILED'] }
+      },
+      orderBy: { started_at: "desc" },
+      take: 100,
+    });
+
+    const mappedCalls = calls.map(c => ({
+      // Swift/iOS default Decodable keys
+      callId: c.id,
+      number: c.receiver_number || c.initiator_number || "unknown",
+      name: c.initiator_number || null,
+      isIncoming: !c.is_incoming,
+
+      // Snake_case keys for other consumers/tests
+      id: c.id,
+      caller_number: c.initiator_number || c.receiver_number || "unknown",
+      caller_name: c.initiator_number || c.receiver_number || "unknown",
+      duration: c.duration_seconds,
+      timestamp: c.started_at,
+      is_incoming: !c.is_incoming,
+      call_type: c.is_incoming ? 'incoming' : 'outgoing'
+    }));
+
+    console.log(`[API] Fetched history: ${mappedCalls.length} calls`);
+    res.status(200).json(mappedCalls);
+  } catch (err) {
+    console.error('History fetch error:', err);
+    next(err);
+  }
+}

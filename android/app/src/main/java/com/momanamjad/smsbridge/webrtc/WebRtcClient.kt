@@ -104,9 +104,10 @@ class WebRtcClient(
                 override fun onIceCandidatesRemoved(candidates: Array<out IceCandidate>?) {}
 
                 override fun onAddStream(stream: MediaStream?) {
-                    Log.i(TAG, "onAddStream: remote stream added")
+                    Log.i(TAG, "Audio stream received from iPhone")
                     val track = stream?.audioTracks?.getOrNull(0)
                     if (track != null) {
+                        track.setEnabled(true)
                         WebRtcCallManager.audioManager.playRemoteAudio(track)
                     }
                 }
@@ -123,6 +124,7 @@ class WebRtcClient(
                     Log.i(TAG, "onAddTrack: remote track received")
                     val track = receiver?.track() as? AudioTrack
                     if (track != null) {
+                        track.setEnabled(true)
                         WebRtcCallManager.audioManager.playRemoteAudio(track)
                     }
                 }
@@ -131,6 +133,7 @@ class WebRtcClient(
                     val track = transceiver?.receiver?.track() as? AudioTrack
                     if (track != null) {
                         Log.i(TAG, "onTrack: remote audio track received")
+                        track.setEnabled(true)
                         WebRtcCallManager.audioManager.playRemoteAudio(track)
                     }
                 }
@@ -145,17 +148,18 @@ class WebRtcClient(
 
             // Create local audio stream and track
             val audioConstraints = MediaConstraints().apply {
-                mandatory.add(MediaConstraints.KeyValuePair("echoCancellation", "true"))
-                mandatory.add(MediaConstraints.KeyValuePair("noiseSuppression", "true"))
+                mandatory.add(MediaConstraints.KeyValuePair("googEchoCancellation", "true"))
+                mandatory.add(MediaConstraints.KeyValuePair("googNoiseSuppression", "true"))
+                mandatory.add(MediaConstraints.KeyValuePair("googAutoGainControl", "true"))
             }
             localAudioSource = peerConnectionFactory.createAudioSource(audioConstraints)
-            localAudioTrack = peerConnectionFactory.createAudioTrack("local_audio_track_${callId}", localAudioSource).apply {
+            localAudioTrack = peerConnectionFactory.createAudioTrack("audio0", localAudioSource).apply {
                 setEnabled(true)
             }
 
             // Start Audio capture and add track
             WebRtcCallManager.audioManager.startAudioCapture(localAudioTrack!!)
-            pc.addTrack(localAudioTrack!!, listOf("local_stream_${callId}"))
+            pc.addTrack(localAudioTrack!!, listOf("stream0"))
 
             true
         } catch (e: Exception) {

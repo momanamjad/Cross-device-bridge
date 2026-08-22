@@ -171,4 +171,14 @@ export function registerCallHandlers(io: Server, socket: Socket) {
       socket.emit("call:error", { call_id: "", error_message: err.message || "Invalid payload" });
     }
   });
+
+  socket.on("webrtc:connected", async (payload: unknown) => {
+    try {
+      logger.info(`Socket event "webrtc:connected" from device=${fromDevice} payload=${JSON.stringify(payload)}`);
+      const data = z.object({ call_id: z.string().min(1) }).parse(payload);
+      await WebRTCSignalServer.handleWebRtcConnected(data.call_id);
+    } catch (err: any) {
+      logger.error(`Error in webrtc:connected handler: ${err.message || err}`, { err });
+    }
+  });
 }

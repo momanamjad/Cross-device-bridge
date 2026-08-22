@@ -22,6 +22,8 @@ import java.io.FileOutputStream
 
 class NodeJsServerService : Service() {
     private var nodeJsThread: Thread? = null
+    private val NOTIFICATION_ID = 9999
+    private val CHANNEL_ID = "nodejs_server"
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -29,7 +31,7 @@ class NodeJsServerService : Service() {
         super.onCreate()
         Log.i(TAG, "Starting Node.js Server Service as Foreground...")
         createNotificationChannel()
-        val notification = buildForegroundNotification()
+        val notification = createNotification()
         if (Build.VERSION.SDK_INT >= 34) {
             ServiceCompat.startForeground(
                 this,
@@ -41,6 +43,10 @@ class NodeJsServerService : Service() {
             startForeground(NOTIFICATION_ID, notification)
         }
         startNodeJsServer()
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        return START_STICKY
     }
 
     private fun startNodeJsServer() {
@@ -156,16 +162,16 @@ class NodeJsServerService : Service() {
             val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "NodeJS Backend Service",
+                "SMS Bridge Server",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "Keeps the local Node.js bridge server running"
+                description = "WebRTC server active on port 9000"
             }
             nm.createNotificationChannel(channel)
         }
     }
 
-    private fun buildForegroundNotification(): Notification {
+    private fun createNotification(): Notification {
         val launch = PendingIntent.getActivity(
             this,
             0,
@@ -173,9 +179,9 @@ class NodeJsServerService : Service() {
             PendingIntent.FLAG_IMMUTABLE
         )
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(com.momanamjad.smsbridge.R.drawable.ic_launcher_foreground)
-            .setContentTitle("SMS Bridge Backend Running")
-            .setContentText("Local server is listening on port 9000")
+            .setSmallIcon(com.momanamjad.smsbridge.R.mipmap.ic_launcher)
+            .setContentTitle("SMS Bridge Server")
+            .setContentText("WebRTC server active on port 9000")
             .setOngoing(true)
             .setContentIntent(launch)
             .build()
@@ -191,7 +197,5 @@ class NodeJsServerService : Service() {
 
     companion object {
         private const val TAG = "NodeJsServerService"
-        private const val CHANNEL_ID = "nodejs_server_channel"
-        private const val NOTIFICATION_ID = 43
     }
 }
