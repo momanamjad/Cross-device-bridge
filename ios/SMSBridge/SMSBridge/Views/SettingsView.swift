@@ -82,6 +82,7 @@ struct SettingsView: View {
                     forgetSettings()
                 }
                 .foregroundColor(.red)
+            }
         }
         .navigationTitle("Settings")
         .toolbar {
