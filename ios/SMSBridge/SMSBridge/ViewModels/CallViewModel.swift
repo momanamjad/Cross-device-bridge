@@ -12,7 +12,7 @@ class CallViewModel: ObservableObject {
     private var timer: Timer?
     private var callStartTime: Date?
     private var activeCallId: String?
-    private var cancellables = Set<AnyCancellable>()
+    private var historyTimer: Timer?
     
     private let ws = WebSocketService.shared
     private let webrtc = WebRTCService()
@@ -25,12 +25,9 @@ class CallViewModel: ObservableObject {
         fetchCallHistory()
         
         // Refresh every 5 seconds
-        Timer.publish(every: 5.0, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] _ in
-                self?.fetchCallHistory()
-            }
-            .store(in: &cancellables)
+        self.historyTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
+            self?.fetchCallHistory()
+        }
     }
     
     private func setupWebSocketListeners() {

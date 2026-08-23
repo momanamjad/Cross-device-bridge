@@ -16,11 +16,11 @@ class AudioService {
             try audioSession.setCategory(
                 .playAndRecord,
                 mode: .voiceChat,
-                options: [.deferredDeactivationStrategy, .defaultToSpeaker]
+                options: [.defaultToSpeaker, .allowBluetooth]
             )
             
             // Activate session
-            try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+            try audioSession.setActive(true)
             
             print("✅ Audio session configured for voice chat")
         } catch {
