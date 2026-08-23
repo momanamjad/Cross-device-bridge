@@ -61,12 +61,17 @@ class CallViewModel: ObservableObject {
         
         ws.onWebRTCOffer = { [weak self] callId, sdp in
             Task {
-                self?.webrtc.initializeConnection()
-                guard let answerSdp = try? await self?.webrtc.processOfferAndAnswer(sdpOffer: sdp) else { return }
-                self?.ws.emit("webrtc:answer", [
-                    "call_id": callId,
-                    "sdp_answer": answerSdp
-                ])
+                guard let self = self else { return }
+                self.webrtc.initializeConnection()
+                do {
+                    let answerSdp = try await self.webrtc.processOfferAndAnswer(sdpOffer: sdp)
+                    self.ws.emit("webrtc:answer", [
+                        "call_id": callId,
+                        "sdp_answer": answerSdp
+                    ])
+                } catch {
+                    print("❌ Error processing offer and answer: \(error)")
+                }
             }
         }
         
@@ -213,7 +218,6 @@ class CallViewModel: ObservableObject {
         print("✅ Call ended and recorded in history")
     }
 
-    @MainActor
     func fetchCallHistory() {
         let token = UserDefaults.standard.string(forKey: "api_token") ?? ""
         let realmIp = UserDefaults.standard.string(forKey: "server_ip") ?? ""

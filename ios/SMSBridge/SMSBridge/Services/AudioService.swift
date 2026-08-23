@@ -29,34 +29,15 @@ class AudioService {
     }
     
     func requestMicrophonePermission() async {
-        if #available(iOS 17.0, *) {
-            let status = AVAudioApplication.shared.recordPermission
-            switch status {
-            case .undetermined:
-                let granted = await AVAudioApplication.requestRecordPermission()
-                if granted {
-                    print("✅ Microphone permission granted")
-                } else {
-                    print("❌ Microphone permission denied")
-                }
-            case .granted:
-                print("✅ Microphone permission already granted")
-            case .denied:
-                print("❌ Microphone permission denied - user must enable in Settings")
-            @unknown default:
-                print("⚠️ Unknown permission status")
+        let granted = await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+            AVAudioSession.sharedInstance().requestRecordPermission { granted in
+                continuation.resume(returning: granted)
             }
+        }
+        if granted {
+            print("✅ Microphone permission granted")
         } else {
-            let granted = await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
-                audioSession.requestRecordPermission { granted in
-                    continuation.resume(returning: granted)
-                }
-            }
-            if granted {
-                print("✅ Microphone permission granted")
-            } else {
-                print("❌ Microphone permission denied")
-            }
+            print("❌ Microphone permission denied")
         }
     }
     
