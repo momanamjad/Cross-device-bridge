@@ -3,15 +3,17 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var callVM = CallViewModel()
     @StateObject private var smsVM = SMSViewModel()
+    @State private var selectedTab = 0
     
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             NavigationStack {
                 CallsTabView(callVM: callVM)
             }
             .tabItem {
                 Label("Calls", systemImage: "phone.fill")
             }
+            .tag(0)
             
             NavigationStack {
                 SMSTabView(smsVM: smsVM)
@@ -19,6 +21,7 @@ struct ContentView: View {
             .tabItem {
                 Label("SMS", systemImage: "message.fill")
             }
+            .tag(1)
             
             NavigationStack {
                 DialerView(callVM: callVM)
@@ -26,13 +29,15 @@ struct ContentView: View {
             .tabItem {
                 Label("Dialer", systemImage: "keypad.fill")
             }
+            .tag(2)
             
             NavigationStack {
-                SettingsView()
+                SettingsView(selectedTab: $selectedTab)
             }
             .tabItem {
                 Label("Settings", systemImage: "gearshape.fill")
             }
+            .tag(3)
         }
         .fullScreenCover(isPresented: Binding(
             get: { if case .ringing(let info) = callVM.callState, info.isIncoming { return true } else { return false } },

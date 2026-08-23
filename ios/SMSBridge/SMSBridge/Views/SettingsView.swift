@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct SettingsView: View {
+    @Binding var selectedTab: Int
     @ObservedObject private var ws = WebSocketService.shared
     
     @State private var serverIP = UserDefaults.standard.string(forKey: "server_ip") ?? ""
@@ -81,9 +82,17 @@ struct SettingsView: View {
                     forgetSettings()
                 }
                 .foregroundColor(.red)
-            }
         }
         .navigationTitle("Settings")
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: {
+                    selectedTab = 2 // Switch back to Dialer tab
+                }) {
+                    Image(systemName: "keypad.fill")
+                }
+            }
+        }
         .alert(isPresented: $showAlert) {
             Alert(title: Text("Settings"), message: Text(alertMessage), dismissButton: .default(Text("OK")))
         }
