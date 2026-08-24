@@ -106,7 +106,7 @@ struct SettingsView: View {
                 Button(action: {
                     selectedTab = 2 // Switch back to Dialer tab
                 }) {
-                    Image(systemName: "keypad.fill")
+                    Image(systemName: "keypad")
                 }
             }
         }
