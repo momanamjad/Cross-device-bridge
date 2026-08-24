@@ -27,7 +27,7 @@ struct ContentView: View {
                 DialerView(callVM: callVM)
             }
             .tabItem {
-                Label("Dialer", systemImage: "keypad")
+                Label("Dialer", systemImage: "circle.grid.3x3.fill")
             }
             .tag(2)
             

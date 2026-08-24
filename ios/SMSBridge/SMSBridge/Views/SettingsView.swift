@@ -6,7 +6,7 @@ struct SettingsView: View {
     
     @State private var serverIP: String = {
         let saved = UserDefaults.standard.string(forKey: "server_ip") ?? ""
-        return saved.isEmpty ? "192.168.18.147" : saved
+        return saved.isEmpty ? "100.254.0.4" : saved
     }()
     @State private var serverPort = String(UserDefaults.standard.integer(forKey: "server_port") == 0 ? 9000 : UserDefaults.standard.integer(forKey: "server_port"))
     @State private var apiToken = UserDefaults.standard.string(forKey: "api_token") ?? ""
@@ -106,7 +106,7 @@ struct SettingsView: View {
                 Button(action: {
                     selectedTab = 2 // Switch back to Dialer tab
                 }) {
-                    Image(systemName: "keypad")
+                    Image(systemName: "circle.grid.3x3.fill")
                 }
             }
         }
