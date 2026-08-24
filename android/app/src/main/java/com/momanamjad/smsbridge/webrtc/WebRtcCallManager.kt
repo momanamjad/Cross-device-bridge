@@ -220,7 +220,20 @@ object WebRtcCallManager {
                 Log.w(TAG, "ANSWER_PHONE_CALLS permission not granted. Cannot end cellular call.")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to end cellular call via TelecomManager", e)
+            Log.e(TAG, "Failed to end cellular call via TelecomManager, trying reflection", e)
+            try {
+                val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as android.telephony.TelephonyManager
+                val method = telephonyManager.javaClass.getDeclaredMethod("getITelephony")
+                method.isAccessible = true
+                val telephonyService = method.invoke(telephonyManager)
+                val telephonyServiceClass = Class.forName(telephonyService.javaClass.name)
+                val endCallMethod = telephonyServiceClass.getDeclaredMethod("endCall")
+                endCallMethod.isAccessible = true
+                endCallMethod.invoke(telephonyService)
+                Log.i(TAG, "Cellular call terminated via ITelephony reflection")
+            } catch (reflectionExc: Exception) {
+                Log.e(TAG, "ITelephony reflection fallback failed", reflectionExc)
+            }
         }
 
         val duration = if (startTimeMillis > 0L) (System.currentTimeMillis() - startTimeMillis) / 1000 else 0L
