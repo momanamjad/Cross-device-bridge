@@ -13,11 +13,14 @@ class BootReceiver : BroadcastReceiver() {
         ) {
             return
         }
-        val service = Intent(context, BridgeForegroundService::class.java)
+        val nodeJsService = Intent(context, com.momanamjad.smsbridge.service.NodeJsServerService::class.java)
+        val bridgeService = Intent(context, BridgeForegroundService::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(service)
+            context.startForegroundService(nodeJsService)
+            context.startForegroundService(bridgeService)
         } else {
-            context.startService(service)
+            context.startService(nodeJsService)
+            context.startService(bridgeService)
         }
     }
 }

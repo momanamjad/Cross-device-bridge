@@ -38,6 +38,7 @@ class BridgeForegroundService : Service() {
             startForeground(NOTIFICATION_ID, notification)
         }
         registerCallCallback()
+        com.momanamjad.smsbridge.sync.SocketManager.connect()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

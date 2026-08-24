@@ -209,6 +209,20 @@ object WebRtcCallManager {
         webRtcClient?.close()
         webRtcClient = null
 
+        // Programmatically terminate the native cellular SIM call if active
+        try {
+            val telecomManager = context.getSystemService(Context.TELECOM_SERVICE) as android.telecom.TelecomManager
+            if (context.checkSelfPermission(android.Manifest.permission.ANSWER_PHONE_CALLS) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                @Suppress("DEPRECATION")
+                telecomManager.endCall()
+                Log.i(TAG, "Cellular call terminated via TelecomManager")
+            } else {
+                Log.w(TAG, "ANSWER_PHONE_CALLS permission not granted. Cannot end cellular call.")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to end cellular call via TelecomManager", e)
+        }
+
         val duration = if (startTimeMillis > 0L) (System.currentTimeMillis() - startTimeMillis) / 1000 else 0L
         updateState(CallState.Ended(callId, duration))
 

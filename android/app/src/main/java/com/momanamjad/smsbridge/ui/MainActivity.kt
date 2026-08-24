@@ -72,6 +72,9 @@ class MainActivity : AppCompatActivity() {
             Manifest.permission.RECORD_AUDIO,
             Manifest.permission.CALL_PHONE,
         )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            list += Manifest.permission.ANSWER_PHONE_CALLS
+        }
         if (Build.VERSION.SDK_INT >= 33) {
             list += Manifest.permission.POST_NOTIFICATIONS
         }

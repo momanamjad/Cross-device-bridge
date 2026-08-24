@@ -1,6 +1,7 @@
 import Foundation
 import AVFoundation
 import UIKit
+import WebRTC
 
 class AudioService {
     static let shared = AudioService()
@@ -11,21 +12,20 @@ class AudioService {
     private init() {}
     
     func setupAudioSession() {
+        let rtcSession = RTCAudioSession.sharedInstance()
+        rtcSession.lockForConfiguration()
         do {
-            // Set category for voice communication
-            try audioSession.setCategory(
-                .playAndRecord,
-                mode: .voiceChat,
+            try rtcSession.setCategory(
+                AVAudioSession.Category.playAndRecord.rawValue,
+                mode: AVAudioSession.Mode.voiceChat.rawValue,
                 options: [.defaultToSpeaker, .allowBluetooth]
             )
-            
-            // Activate session
-            try audioSession.setActive(true)
-            
-            print("✅ Audio session configured for voice chat")
+            try rtcSession.setActive(true)
+            print("✅ RTCAudioSession configured for voice chat")
         } catch {
-            print("❌ Audio session error: \(error.localizedDescription)")
+            print("❌ RTCAudioSession error: \(error.localizedDescription)")
         }
+        rtcSession.unlockForConfiguration()
     }
     
     func requestMicrophonePermission() async {
