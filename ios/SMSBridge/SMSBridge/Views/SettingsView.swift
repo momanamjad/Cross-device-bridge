@@ -85,8 +85,21 @@ struct SettingsView: View {
             }
         }
         .navigationTitle("Settings")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItem(placement: .topBarLeading) {
+                Button(action: {
+                    selectedTab = 2 // Switch back to Dialer tab
+                }) {
+                    HStack(spacing: 5) {
+                        Image(systemName: "chevron.left")
+                            .bold()
+                        Text("Back")
+                    }
+                }
+            }
+            
+            ToolbarItem(placement: .topBarTrailing) {
                 Button(action: {
                     selectedTab = 2 // Switch back to Dialer tab
                 }) {
