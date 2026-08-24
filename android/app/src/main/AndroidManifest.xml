@@ -52,7 +52,6 @@
         <service
             android:name=".service.BridgeForegroundService"
             android:exported="false"
-            android:process=":backend"
             android:foregroundServiceType="dataSync|specialUse">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
@@ -63,7 +62,6 @@
             android:name=".service.NodeJsServerService"
             android:enabled="true"
             android:exported="false"
-            android:process=":backend"
             android:foregroundServiceType="specialUse">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"

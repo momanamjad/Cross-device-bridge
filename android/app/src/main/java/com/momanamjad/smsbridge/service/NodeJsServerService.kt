@@ -49,6 +49,26 @@ class NodeJsServerService : Service() {
         return START_STICKY
     }
 
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        Log.i(TAG, "Task removed (app swiped away). Keeping NodeJsServerService alive.")
+        val restartServiceIntent = Intent(applicationContext, this.javaClass).apply {
+            setPackage(packageName)
+        }
+        val restartServicePendingIntent = PendingIntent.getService(
+            applicationContext,
+            1,
+            restartServiceIntent,
+            PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val alarmService = applicationContext.getSystemService(android.content.Context.ALARM_SERVICE) as android.app.AlarmManager
+        alarmService.set(
+            android.app.AlarmManager.RTC,
+            System.currentTimeMillis() + 500,
+            restartServicePendingIntent
+        )
+    }
+
     private fun startNodeJsServer() {
         nodeJsThread = Thread {
             try {
