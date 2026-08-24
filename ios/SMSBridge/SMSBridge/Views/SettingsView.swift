@@ -4,10 +4,13 @@ struct SettingsView: View {
     @Binding var selectedTab: Int
     @ObservedObject private var ws = WebSocketService.shared
     
-    @State private var serverIP = UserDefaults.standard.string(forKey: "server_ip") ?? ""
+    @State private var serverIP: String = {
+        let saved = UserDefaults.standard.string(forKey: "server_ip") ?? ""
+        return saved.isEmpty ? "192.168.18.147" : saved
+    }()
     @State private var serverPort = String(UserDefaults.standard.integer(forKey: "server_port") == 0 ? 9000 : UserDefaults.standard.integer(forKey: "server_port"))
     @State private var apiToken = UserDefaults.standard.string(forKey: "api_token") ?? ""
-    @State private var registerSecret = ""
+    @State private var registerSecret = "super_secret_bridge_key"
     
     @State private var alertMessage = ""
     @State private var showAlert = false

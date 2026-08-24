@@ -15,11 +15,8 @@ class AudioService {
         let rtcSession = RTCAudioSession.sharedInstance()
         rtcSession.lockForConfiguration()
         do {
-            try rtcSession.setCategory(
-                AVAudioSession.Category.playAndRecord.rawValue,
-                mode: AVAudioSession.Mode.voiceChat.rawValue,
-                options: [.defaultToSpeaker, .allowBluetooth]
-            )
+            try rtcSession.setCategory(AVAudioSession.Category.playAndRecord.rawValue, with: [.defaultToSpeaker, .allowBluetooth])
+            try rtcSession.setMode(AVAudioSession.Mode.voiceChat.rawValue)
             try rtcSession.setActive(true)
             print("✅ RTCAudioSession configured for voice chat")
         } catch {
