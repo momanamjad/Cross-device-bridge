@@ -38,6 +38,14 @@ struct ContentView: View {
                 Label("Settings", systemImage: "gearshape.fill")
             }
             .tag(3)
+            
+            NavigationStack {
+                FileDropView()
+            }
+            .tabItem {
+                Label("Drop", systemImage: "paperplane.fill")
+            }
+            .tag(4)
         }
         .fullScreenCover(isPresented: Binding(
             get: { if case .ringing(let info) = callVM.callState, info.isIncoming { return true } else { return false } },
@@ -68,11 +76,12 @@ struct ContentView: View {
         let ip = UserDefaults.standard.string(forKey: "server_ip") ?? ""
         let port = UserDefaults.standard.integer(forKey: "server_port")
         let token = UserDefaults.standard.string(forKey: "api_token") ?? ""
+        let secret = UserDefaults.standard.string(forKey: "register_secret") ?? "super_secret_bridge_key"
         
         if !ip.isEmpty && port != 0 && !token.isEmpty {
-            WebSocketService.shared.connect(host: ip, port: port, token: token)
-            smsVM.startListening(host: ip, port: port, token: token)
-            callVM.fetchHistory(host: ip, port: port, token: token)
+            WebSocketService.shared.connect(host: ip, port: port, token: token, secret: secret)
+            smsVM.startListening(host: ip, port: port, token: token, secret: secret)
+            callVM.fetchHistory(host: ip, port: port, token: token, secret: secret)
         }
     }
 }

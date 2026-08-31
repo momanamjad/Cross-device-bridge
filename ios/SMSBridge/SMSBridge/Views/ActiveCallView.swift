@@ -34,8 +34,16 @@ struct ActiveCallView: View {
                             .font(.system(size: 24, weight: .semibold))
                             .foregroundColor(.gray)
                     } else if case .connected(let info, _) = callViewModel.callState {
-                        AvatarView(name: info.callerName ?? info.callerId)
-                            .padding(.bottom, 10)
+                        if let vTrack = callViewModel.remoteVideoTrack {
+                            RemoteCameraView(videoTrack: vTrack)
+                                .frame(height: 300)
+                                .cornerRadius(20)
+                                .padding(.horizontal)
+                        } else {
+                            AvatarView(name: info.callerName ?? info.callerId)
+                                .padding(.bottom, 10)
+                        }
+                        
                         Text(info.callerName ?? info.callerId)
                             .font(.system(size: 32, weight: .bold))
                             .foregroundColor(.white)

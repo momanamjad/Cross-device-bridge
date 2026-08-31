@@ -1,6 +1,8 @@
 import { Server } from "socket.io";
 import { prisma } from "../config/database";
 import { winstonLogger as logger } from "../lib/winstonLogger";
+import { encryptPayload } from "../lib/crypto";
+import { env } from "../config/environment";
 
 export interface ActiveCall {
   id: string;
@@ -306,25 +308,31 @@ export class WebRTCSignalServer {
 
     // Emit call:ended event to all connected clients in the room
     io.to(`call_${callId}`).emit("call:ended", {
-      event: "call:ended",
-      call_id: callId,
-      duration: calculatedDuration,
-      timestamp: new Date().toISOString(),
+      data: encryptPayload({
+        event: "call:ended",
+        call_id: callId,
+        duration: calculatedDuration,
+        timestamp: new Date().toISOString(),
+      }, env.registerSecret)
     });
     console.log(`[SOCKET] Emitted call:ended to all clients`);
 
     // Also broadcast to update call history
     io.emit("call:history-updated", {
-      event: "call:history-updated",
-      call_id: callId,
-      duration: calculatedDuration,
+      data: encryptPayload({
+        event: "call:history-updated",
+        call_id: callId,
+        duration: calculatedDuration,
+      }, env.registerSecret)
     });
     console.log(`[SOCKET] Emitted call:history-updated`);
 
     // Keep existing events for backward compatibility
     io.to(`call_${callId}`).emit("call:hangup", {
-      call_id: callId,
-      duration: calculatedDuration,
+      data: encryptPayload({
+        call_id: callId,
+        duration: calculatedDuration,
+      }, env.registerSecret)
     });
 
     this.broadcastToDevice("realme_c3_1", "call:hangup", {
@@ -364,7 +372,8 @@ export class WebRTCSignalServer {
     }
 
     logger.debug(`WebRTCSignalServer: broadcastToDevice target=${targetDevice} event=${event}`);
-    io.to(`device_ext:${targetDevice}`).emit(event, data);
+    const encrypted = encryptPayload(data, env.registerSecret);
+    io.to(`device_ext:${targetDevice}`).emit(event, { data: encrypted });
   }
 
   private static async joinDevicesToCallRoom(callId: string): Promise<void> {

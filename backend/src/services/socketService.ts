@@ -2,7 +2,7 @@ import { Server as HttpServer } from "http";
 import { Server, type Socket } from "socket.io";
 import { env } from "../config/environment";
 import { prisma } from "../config/database";
-import { hashToken } from "../lib/crypto";
+import { hashToken, encryptPayload, decryptPayload } from "../lib/crypto";
 import { logger } from "../lib/logger";
 import { registerCallHandlers } from "../sockets/callHandlers";
 import { WebRTCSignalServer } from "./webrtcSignal";
@@ -51,13 +51,27 @@ export function initSocket(httpServer: HttpServer): Server {
     const extRoom = `device_ext:${externalId}`;
     void socket.join(room);
     void socket.join(extRoom);
+    
+    socket.use(([event, ...args], next) => {
+      if (args.length > 0 && args[0] && typeof args[0] === "object" && typeof args[0].data === "string") {
+        try {
+          args[0] = decryptPayload(args[0].data, env.registerSecret);
+        } catch (err) {
+          logger.error({ err }, "Failed to decrypt incoming socket payload");
+          return next(new Error("Decryption failed"));
+        }
+      }
+      next();
+    });
+
     logger.info({ deviceId, externalId, sid: socket.id }, "socket connected");
 
-    socket.emit("device:status", {
+    const statusPayload = {
       device_id: externalId,
       status: "online",
       last_seen: new Date().toISOString(),
-    });
+    };
+    socket.emit("device:status", { data: encryptPayload(statusPayload, env.registerSecret) });
 
     socket.on("message:confirm", async (payload: { id?: string }) => {
       if (!payload?.id) return;
@@ -95,8 +109,19 @@ export function getIo(): Server {
 
 export function emitToDevice(
   deviceId: string,
-  event: "message:new" | "call:new" | "device:status",
+  event: "message:new" | "call:new" | "device:status" | "file:received",
   payload: unknown,
 ): void {
-  getIo().to(`device:${deviceId}`).emit(event, payload);
+  if (!io) return;
+  const encrypted = encryptPayload(payload, env.registerSecret);
+  io.to(`device:${deviceId}`).emit(event, { data: encrypted });
+}
+
+export function emitToDeviceRaw(
+  deviceId: string,
+  event: string,
+  payload: unknown,
+): void {
+  if (!io) return;
+  io.to(`device:${deviceId}`).emit(event, payload);
 }

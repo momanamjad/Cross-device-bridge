@@ -17,6 +17,7 @@ class WebRtcClient(
     companion object {
         private const val TAG = "WebRtcClient"
         private var factory: PeerConnectionFactory? = null
+        val rootEglBase: EglBase by lazy { EglBase.create() }
 
         @Synchronized
         private fun getOrCreateFactory(context: Context): PeerConnectionFactory {
@@ -27,6 +28,8 @@ class WebRtcClient(
                         .createInitializationOptions()
                 )
                 factory = PeerConnectionFactory.builder()
+                    .setVideoDecoderFactory(DefaultVideoDecoderFactory(rootEglBase.eglBaseContext))
+                    .setVideoEncoderFactory(DefaultVideoEncoderFactory(rootEglBase.eglBaseContext, true, true))
                     .setOptions(PeerConnectionFactory.Options())
                     .createPeerConnectionFactory()
             }
@@ -37,6 +40,10 @@ class WebRtcClient(
     private var peerConnection: PeerConnection? = null
     private var localAudioTrack: AudioTrack? = null
     private var localAudioSource: AudioSource? = null
+
+    private var videoCapturer: VideoCapturer? = null
+    private var localVideoSource: VideoSource? = null
+    private var localVideoTrack: VideoTrack? = null
     
     private var localSdpOffer: String? = null
     private var localSdpAnswer: String? = null
@@ -161,6 +168,22 @@ class WebRtcClient(
             WebRtcCallManager.audioManager.startAudioCapture(localAudioTrack!!)
             pc.addTrack(localAudioTrack!!, listOf("stream0"))
 
+            // Initialize video capture
+            videoCapturer = createVideoCapturer(context)
+            if (videoCapturer != null) {
+                val surfaceTextureHelper = SurfaceTextureHelper.create("CaptureThread", rootEglBase.eglBaseContext)
+                localVideoSource = peerConnectionFactory.createVideoSource(videoCapturer!!.isScreencast)
+                videoCapturer?.initialize(surfaceTextureHelper, context, localVideoSource!!.capturerObserver)
+                videoCapturer?.startCapture(1280, 720, 30)
+
+                localVideoTrack = peerConnectionFactory.createVideoTrack("video0", localVideoSource)
+                localVideoTrack?.setEnabled(true)
+                pc.addTrack(localVideoTrack!!, listOf("stream0"))
+                Log.i(TAG, "Video capturer initialized and track added.")
+            } else {
+                Log.w(TAG, "Failed to create video capturer.")
+            }
+
             true
         } catch (e: Exception) {
             Log.e(TAG, "Error in initialize: ${e.message}", e)
@@ -177,6 +200,7 @@ class WebRtcClient(
 
         val constraints = MediaConstraints().apply {
             mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"))
+            mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"))
         }
 
         pc.createOffer(object : SdpObserver {
@@ -212,6 +236,7 @@ class WebRtcClient(
 
         val constraints = MediaConstraints().apply {
             mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"))
+            mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"))
         }
 
         pc.createAnswer(object : SdpObserver {
@@ -285,13 +310,40 @@ class WebRtcClient(
         }
     }
 
+    private fun createVideoCapturer(context: Context): VideoCapturer? {
+        val enumerator = Camera2Enumerator(context)
+        val deviceNames = enumerator.deviceNames
+
+        // Try to find back facing camera first for a bodycam/dashcam perspective, or front
+        for (deviceName in deviceNames) {
+            if (enumerator.isBackFacing(deviceName)) {
+                val videoCapturer: VideoCapturer? = enumerator.createCapturer(deviceName, null)
+                if (videoCapturer != null) return videoCapturer
+            }
+        }
+        for (deviceName in deviceNames) {
+            if (enumerator.isFrontFacing(deviceName)) {
+                val videoCapturer: VideoCapturer? = enumerator.createCapturer(deviceName, null)
+                if (videoCapturer != null) return videoCapturer
+            }
+        }
+        return null
+    }
+
     fun close() {
         Log.i(TAG, "Closing WebRtcClient resources")
         try {
+            videoCapturer?.stopCapture()
+            videoCapturer?.dispose()
+            localVideoSource?.dispose()
+            
             localAudioTrack?.setEnabled(false)
             localAudioSource?.dispose()
             peerConnection?.close()
             
+            videoCapturer = null
+            localVideoSource = null
+            localVideoTrack = null
             localAudioTrack = null
             localAudioSource = null
             peerConnection = null

@@ -167,6 +167,7 @@ struct SettingsView: View {
         UserDefaults.standard.set(serverIP, forKey: "server_ip")
         UserDefaults.standard.set(portInt, forKey: "server_port")
         UserDefaults.standard.set(apiToken, forKey: "api_token")
+        UserDefaults.standard.set(registerSecret, forKey: "register_secret")
         
         alertMessage = "Configuration saved successfully!"
         showAlert = true
@@ -279,6 +280,7 @@ struct SettingsView: View {
                     UserDefaults.standard.set(token, forKey: "api_token")
                     UserDefaults.standard.set(self.serverIP, forKey: "server_ip")
                     UserDefaults.standard.set(portInt, forKey: "server_port")
+                    UserDefaults.standard.set(self.registerSecret, forKey: "register_secret")
                     self.isRegistering = false
                     self.alertMessage = "Device Registered! Token saved."
                     self.showAlert = true
@@ -306,6 +308,7 @@ struct SettingsView: View {
         UserDefaults.standard.removeObject(forKey: "server_ip")
         UserDefaults.standard.removeObject(forKey: "server_port")
         UserDefaults.standard.removeObject(forKey: "api_token")
+        UserDefaults.standard.removeObject(forKey: "register_secret")
         
         serverIP = ""
         serverPort = "9000"

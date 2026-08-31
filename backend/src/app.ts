@@ -9,6 +9,9 @@ import { healthRouter } from "./routes/health";
 import { devicesRouter } from "./routes/devices";
 import { callsRouter, messagesRouter } from "./routes/messages";
 import { webrtcCallsRouter } from "./routes/webrtcCalls";
+import { encryptRestResponse } from "./middleware/encryption";
+import { filesRouter } from "./routes/files";
+import path from "path";
 
 export function createApp() {
   const app = express();
@@ -22,10 +25,12 @@ export function createApp() {
   app.use(pinoHttp({ logger }));
 
   app.use("/api/health", healthRouter);
-  app.use("/api/devices", devicesRouter);
-  app.use("/api/messages", messagesRouter);
-  app.use("/api/calls", webrtcCallsRouter);
-  app.use("/api/calls", callsRouter);
+  app.use("/api/devices", encryptRestResponse, devicesRouter);
+  app.use("/api/messages", encryptRestResponse, messagesRouter);
+  app.use("/api/calls", encryptRestResponse, webrtcCallsRouter);
+  app.use("/api/calls", encryptRestResponse, callsRouter);
+  app.use("/api/files", encryptRestResponse, filesRouter);
+  app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
   app.use(errorHandler);
   return app;

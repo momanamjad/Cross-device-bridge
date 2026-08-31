@@ -21,10 +21,10 @@ class SMSViewModel: ObservableObject {
         }
     }
     
-    func fetchSMSHistory(host: String, port: Int, token: String) {
+    func fetchSMSHistory(host: String, port: Int, token: String, secret: String) {
         Task {
             do {
-                let history = try await BackendService.shared.fetchMessages(host: host, port: port, token: token)
+                let history = try await BackendService.shared.fetchMessages(host: host, port: port, token: token, secret: secret)
                 DispatchQueue.main.async {
                     self.messages = history
                 }
@@ -34,7 +34,7 @@ class SMSViewModel: ObservableObject {
         }
     }
     
-    func startListening(host: String, port: Int, token: String) {
-        fetchSMSHistory(host: host, port: port, token: token)
+    func startListening(host: String, port: Int, token: String, secret: String) {
+        fetchSMSHistory(host: host, port: port, token: token, secret: secret)
     }
 }

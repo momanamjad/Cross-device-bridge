@@ -7,6 +7,8 @@ import type { AuthedRequest } from "../middleware/auth";
 import { WebRTCSignalServer } from "../services/webrtcSignal";
 import { getIo } from "../services/socketService";
 import { winstonLogger as logger } from "../lib/winstonLogger";
+import { encryptPayload } from "../lib/crypto";
+import { env } from "../config/environment";
 
 // Request schemas
 export const restIncomingSchema = z.object({
@@ -176,9 +178,11 @@ export async function handleTestSignalRest(
     
     const timestamp = Date.now();
     io.to(`call_${body.call_id}`).emit("webrtc:test-signal", {
-      call_id: body.call_id,
-      timestamp,
-      message: "Test signal from server",
+      data: encryptPayload({
+        call_id: body.call_id,
+        timestamp,
+        message: "Test signal from server",
+      }, env.registerSecret)
     });
 
     res.status(200).json({

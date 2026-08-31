@@ -8,6 +8,7 @@ class CallViewModel: ObservableObject {
     @Published var callDuration: TimeInterval = 0
     @Published var audioOutputSpeaker = true
     @Published var micMuted = false
+    @Published var remoteVideoTrack: RTCVideoTrack?
     
     private var timer: Timer?
     private var callStartTime: Date?
@@ -31,11 +32,31 @@ class CallViewModel: ObservableObject {
     }
     
     private func setupWebSocketListeners() {
+        CallKitManager.shared.onAnswerCall = { [weak self] callId in
+            DispatchQueue.main.async {
+                self?.acceptCall()
+            }
+        }
+        
+        CallKitManager.shared.onEndCall = { [weak self] callId in
+            DispatchQueue.main.async {
+                if self?.activeCallId == callId {
+                    self?.endCall()
+                }
+            }
+        }
+
         ws.onIncomingCall = { [weak self] info in
             DispatchQueue.main.async {
                 self?.callState = .ringing(info)
                 self?.activeCallId = info.callId
                 AudioService.shared.startRingtone()
+                
+                CallKitManager.shared.reportIncomingCall(id: info.callId, handle: info.callerId, callerName: info.callerName) { error in
+                    if let error = error {
+                        print("CallKit error: \(error)")
+                    }
+                }
             }
         }
         
@@ -92,6 +113,12 @@ class CallViewModel: ObservableObject {
                 ]
             ])
         }
+        
+        webrtc.onVideoTrackAdded = { [weak self] track in
+            DispatchQueue.main.async {
+                self?.remoteVideoTrack = track
+            }
+        }
     }
     
     func makeCall(phoneNumber: String) {
@@ -125,11 +152,13 @@ class CallViewModel: ObservableObject {
         ws.emit("call:reject", ["call_id": callId])
         callState = .idle
         activeCallId = nil
+        CallKitManager.shared.endCall(id: callId)
     }
     
     func endCall() {
         guard let callId = activeCallId else { return }
         ws.emit("call:hangup", ["call_id": callId])
+        CallKitManager.shared.endCall(id: callId)
         cleanupCall()
     }
     
@@ -160,12 +189,13 @@ class CallViewModel: ObservableObject {
         callState = .idle
         activeCallId = nil
         callDuration = 0
+        remoteVideoTrack = nil
     }
     
-    func fetchHistory(host: String, port: Int, token: String) {
+    func fetchHistory(host: String, port: Int, token: String, secret: String) {
         Task {
             do {
-                let history = try await BackendService.shared.fetchCalls(host: host, port: port, token: token)
+                let history = try await BackendService.shared.fetchCalls(host: host, port: port, token: token, secret: secret)
                 DispatchQueue.main.async {
                     self.callHistory = history
                 }
@@ -198,6 +228,7 @@ class CallViewModel: ObservableObject {
         
         callState = .idle
         activeCallId = nil
+        remoteVideoTrack = nil
         
         // Add to history
         if let callInfo = currentCallInfo {
@@ -212,6 +243,7 @@ class CallViewModel: ObservableObject {
             callHistory.insert(callRecord, at: 0)
         }
         
+        CallKitManager.shared.endCall(id: callId)
         print("✅ Call ended and recorded in history")
     }
 
@@ -231,6 +263,7 @@ class CallViewModel: ObservableObject {
         request.httpMethod = "GET"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         
+        let secret = UserDefaults.standard.string(forKey: "register_secret") ?? "super_secret_bridge_key"
         URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
             if let error = error {
                 print("❌ Fetch history error: \(error.localizedDescription)")
@@ -243,9 +276,16 @@ class CallViewModel: ObservableObject {
             }
             
             do {
+                guard let wrapper = try? JSONSerialization.jsonObject(with: data) as? [String: String],
+                      let encryptedStr = wrapper["data"] else {
+                    print("❌ Invalid encrypted history response")
+                    return
+                }
+                let decrypted = try CryptoHelper.decryptPayload(encryptedStr, secret: secret)
+                
                 let decoder = JSONDecoder()
                 decoder.dateDecodingStrategy = .iso8601
-                let calls = try decoder.decode([Call].self, from: data)
+                let calls = try decoder.decode([Call].self, from: decrypted)
                 
                 DispatchQueue.main.async {
                     self?.callHistory = calls

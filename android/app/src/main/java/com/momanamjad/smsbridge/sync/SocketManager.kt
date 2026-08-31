@@ -123,6 +123,18 @@ object SocketManager {
                     }
                 }
 
+                on("file:received") { args ->
+                    val data = args.getOrNull(0) as? JSONObject ?: return@on
+                    val url = data.optString("url")
+                    val filename = data.optString("filename")
+                    if (url.isNotEmpty() && filename.isNotEmpty()) {
+                        Log.i(TAG, "Socket received file:received filename=$filename url=$url")
+                        scope.launch {
+                            com.momanamjad.smsbridge.sync.FileDownloadManager.downloadFile(url, filename)
+                        }
+                    }
+                }
+
                 connect()
             }
         } catch (e: Exception) {

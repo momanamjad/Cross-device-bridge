@@ -5,9 +5,11 @@ class WebRTCService: NSObject {
     private var peerConnection: RTCPeerConnection?
     private let factory: RTCPeerConnectionFactory
     private var audioTrack: RTCAudioTrack?
+    private(set) var videoTrack: RTCVideoTrack?
     
     var onLocalIceCandidate: ((RTCIceCandidate) -> Void)?
     var onAudioTrackAdded: (() -> Void)?
+    var onVideoTrackAdded: ((RTCVideoTrack) -> Void)?
     
     override init() {
         // Initialize WebRTC Factory with default options
@@ -41,7 +43,10 @@ class WebRTCService: NSObject {
         let config = RTCConfiguration()
         config.sdpSemantics = .unifiedPlan
         let constraints = RTCMediaConstraints(
-            mandatoryConstraints: ["OfferToReceiveAudio": "true"],
+            mandatoryConstraints: [
+                "OfferToReceiveAudio": "true",
+                "OfferToReceiveVideo": "true"
+            ],
             optionalConstraints: nil
         )
         
@@ -78,7 +83,13 @@ class WebRTCService: NSObject {
         }
         
         // 2. Create SDP Answer
-        let constraints = RTCMediaConstraints(mandatoryConstraints: nil, optionalConstraints: nil)
+        let constraints = RTCMediaConstraints(
+            mandatoryConstraints: [
+                "OfferToReceiveAudio": "true",
+                "OfferToReceiveVideo": "true"
+            ],
+            optionalConstraints: nil
+        )
         let localDesc = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<RTCSessionDescription, Error>) in
             peerConnection?.answer(for: constraints) { sdp, error in
                 if let sdp = sdp {
@@ -123,6 +134,11 @@ extension WebRTCService: RTCPeerConnectionDelegate {
             audioTrack.isEnabled = true
             print("✅ Remote audio track enabled and playing")
             onAudioTrackAdded?()
+        }
+        if let vTrack = stream.videoTracks.first {
+            print("✅ Remote video track received")
+            self.videoTrack = vTrack
+            onVideoTrackAdded?(vTrack)
         }
     }
     
