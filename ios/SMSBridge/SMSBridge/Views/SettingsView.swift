@@ -6,6 +6,7 @@ struct SettingsView: View {
     
     @State private var serverIP: String = UserDefaults.standard.string(forKey: "server_ip") ?? ""
     @State private var serverPort = String(UserDefaults.standard.integer(forKey: "server_port") == 0 ? 9000 : UserDefaults.standard.integer(forKey: "server_port"))
+    @State private var tunnelUrl: String = UserDefaults.standard.string(forKey: "tunnel_url") ?? ""
     @State private var apiToken = UserDefaults.standard.string(forKey: "api_token") ?? ""
     @State private var registerSecret = "super_secret_bridge_key"
     
@@ -142,6 +143,7 @@ struct SettingsView: View {
                 if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
                     if let ip = json["ip"] as? String { self.serverIP = ip }
                     if let port = json["port"] as? Int { self.serverPort = String(port) }
+                    if let tunnel = json["tunnel_url"] as? String { self.tunnelUrl = tunnel }
                     if let secret = json["secret"] as? String { self.registerSecret = secret }
                     
                     self.alertMessage = "QR Code scanned successfully! Registering..."
@@ -166,6 +168,7 @@ struct SettingsView: View {
         let portInt = Int(serverPort) ?? 9000
         UserDefaults.standard.set(serverIP, forKey: "server_ip")
         UserDefaults.standard.set(portInt, forKey: "server_port")
+        UserDefaults.standard.set(tunnelUrl, forKey: "tunnel_url")
         UserDefaults.standard.set(apiToken, forKey: "api_token")
         UserDefaults.standard.set(registerSecret, forKey: "register_secret")
         
@@ -175,7 +178,7 @@ struct SettingsView: View {
     
     private func connect() {
         let portInt = Int(serverPort) ?? 9000
-        ws.connect(host: serverIP, port: portInt, token: apiToken)
+        ws.connect(host: serverIP, port: portInt, tunnelUrl: tunnelUrl, token: apiToken, secret: registerSecret)
     }
     
     private func discoverServer() {
@@ -307,11 +310,13 @@ struct SettingsView: View {
         ws.disconnect()
         UserDefaults.standard.removeObject(forKey: "server_ip")
         UserDefaults.standard.removeObject(forKey: "server_port")
+        UserDefaults.standard.removeObject(forKey: "tunnel_url")
         UserDefaults.standard.removeObject(forKey: "api_token")
         UserDefaults.standard.removeObject(forKey: "register_secret")
         
         serverIP = ""
         serverPort = "9000"
+        tunnelUrl = ""
         apiToken = ""
         registerSecret = ""
         

@@ -30,6 +30,28 @@ if (process.env.LOG_FILE_PATH) {
   });
 }
 
+import localtunnel from "localtunnel";
+
+export let currentTunnelUrl: string | null = null;
+
+async function setupTunnel(port: number) {
+  try {
+    const tunnel = await localtunnel({ port });
+    currentTunnelUrl = tunnel.url;
+    logger.info({ tunnelUrl: tunnel.url }, "Localtunnel successfully started");
+
+    tunnel.on("close", () => {
+      logger.warn("Localtunnel closed, reconnecting in 5s...");
+      currentTunnelUrl = null;
+      setTimeout(() => setupTunnel(port), 5000);
+    });
+  } catch (err) {
+    logger.error({ err }, "Failed to start localtunnel");
+    currentTunnelUrl = null;
+    setTimeout(() => setupTunnel(port), 5000);
+  }
+}
+
 async function main() {
   const app = createApp();
   const httpServer = createServer(app);
@@ -37,6 +59,7 @@ async function main() {
 
   httpServer.listen(env.port, "0.0.0.0", () => {
     logger.info({ port: env.port }, "device-bridge api listening");
+    setupTunnel(env.port);
   });
 }
 

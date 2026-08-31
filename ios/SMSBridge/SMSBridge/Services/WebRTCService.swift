@@ -42,6 +42,10 @@ class WebRTCService: NSObject {
         // 3. Create peer connection with audio constraints
         let config = RTCConfiguration()
         config.sdpSemantics = .unifiedPlan
+        config.iceServers = [
+            RTCIceServer(urlStrings: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"]),
+            RTCIceServer(urlStrings: ["turn:openrelay.metered.ca:80"], username: "openrelayproject", credential: "openrelayproject")
+        ]
         let constraints = RTCMediaConstraints(
             mandatoryConstraints: [
                 "OfferToReceiveAudio": "true",

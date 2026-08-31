@@ -78,8 +78,10 @@ struct ContentView: View {
         let token = UserDefaults.standard.string(forKey: "api_token") ?? ""
         let secret = UserDefaults.standard.string(forKey: "register_secret") ?? "super_secret_bridge_key"
         
+        let tunnelUrl = UserDefaults.standard.string(forKey: "tunnel_url") ?? ""
+        
         if !ip.isEmpty && port != 0 && !token.isEmpty {
-            WebSocketService.shared.connect(host: ip, port: port, token: token, secret: secret)
+            WebSocketService.shared.connect(host: ip, port: port, tunnelUrl: tunnelUrl, token: token, secret: secret)
             smsVM.startListening(host: ip, port: port, token: token, secret: secret)
             callVM.fetchHistory(host: ip, port: port, token: token, secret: secret)
         }

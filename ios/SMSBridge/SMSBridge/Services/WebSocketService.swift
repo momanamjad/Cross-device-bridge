@@ -22,10 +22,29 @@ class WebSocketService: ObservableObject {
         setupBackgroundHandling()
     }
     
-    func connect(host: String, port: Int, token: String, secret: String) {
+    private var fallbackWorkItem: DispatchWorkItem?
+    
+    func connect(host: String, port: Int, tunnelUrl: String? = nil, token: String, secret: String) {
         disconnect()
         
-        guard let url = URL(string: "http://\(host):\(port)") else { return }
+        let localUrlStr = "http://\(host):\(port)"
+        connectToUrl(localUrlStr, token: token, secret: secret)
+        
+        if let tunnel = tunnelUrl, !tunnel.isEmpty {
+            fallbackWorkItem = DispatchWorkItem { [weak self] in
+                guard let self = self else { return }
+                if !self.isConnected {
+                    print("Local connection timed out, falling back to tunnel: \(tunnel)")
+                    self.disconnect()
+                    self.connectToUrl(tunnel, token: token, secret: secret)
+                }
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0, execute: fallbackWorkItem!)
+        }
+    }
+    
+    private func connectToUrl(_ urlStr: String, token: String, secret: String) {
+        guard let url = URL(string: urlStr) else { return }
         
         manager = SocketManager(socketURL: url, config: [
             .log(false),
@@ -40,6 +59,7 @@ class WebSocketService: ObservableObject {
         socket?.on(clientEvent: .connect) { [weak self] _, _ in
             DispatchQueue.main.async {
                 self?.isConnected = true
+                self?.fallbackWorkItem?.cancel()
             }
         }
         

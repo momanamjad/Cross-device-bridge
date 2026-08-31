@@ -101,6 +101,7 @@ class MainActivity : AppCompatActivity() {
                 val status = json.optString("status", "unknown")
                 val uptime = json.optInt("uptime", 0)
                 val serverIP = json.optString("server_ip", "--")
+                val tunnelUrl = json.optString("tunnel_url", "")
 
                 val uptimeText = if (uptime >= 3600) "${uptime / 3600}h ${(uptime % 3600) / 60}m"
                                  else if (uptime >= 60) "${uptime / 60}m ${uptime % 60}s"
@@ -113,10 +114,15 @@ class MainActivity : AppCompatActivity() {
                         else R.drawable.status_dot_red
                     )
                     binding.statUptime.text = uptimeText
-                    binding.statIP.text = serverIP
+                    
+                    if (tunnelUrl.isNotEmpty()) {
+                        binding.statIP.text = "$serverIP\n$tunnelUrl"
+                    } else {
+                        binding.statIP.text = serverIP
+                    }
 
                     if (status == "ok" && serverIP != "--" && serverIP != "127.0.0.1") {
-                        generateQRCode(serverIP)
+                        generateQRCode(serverIP, tunnelUrl)
                     } else {
                         binding.qrCard.visibility = View.GONE
                     }
@@ -134,7 +140,7 @@ class MainActivity : AppCompatActivity() {
         handler.postDelayed({ pollHealth() }, 5000)
     }
 
-    private fun generateQRCode(ip: String) {
+    private fun generateQRCode(ip: String, tunnelUrl: String) {
         if (binding.qrCard.visibility == View.VISIBLE) return // Already generated
 
         val settings = BridgeApp.instance.settings
@@ -144,6 +150,9 @@ class MainActivity : AppCompatActivity() {
             put("ip", ip)
             put("port", 9000)
             put("secret", secret)
+            if (tunnelUrl.isNotEmpty()) {
+                put("tunnel_url", tunnelUrl)
+            }
         }.toString()
 
         try {

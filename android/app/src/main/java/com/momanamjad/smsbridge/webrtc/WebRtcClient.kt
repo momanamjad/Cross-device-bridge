@@ -57,7 +57,12 @@ class WebRtcClient(
             // Build PeerConnection constraints and RTCConfiguration
             // Since it's local network only, no internet, we can use empty iceServers or a default stun
             val iceServers = listOf(
-                PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer()
+                PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer(),
+                PeerConnection.IceServer.builder("stun:stun1.l.google.com:19302").createIceServer(),
+                PeerConnection.IceServer.builder("turn:openrelay.metered.ca:80")
+                    .setUsername("openrelayproject")
+                    .setPassword("openrelayproject")
+                    .createIceServer()
             )
             val rtcConfig = PeerConnection.RTCConfiguration(iceServers).apply {
                 sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN
