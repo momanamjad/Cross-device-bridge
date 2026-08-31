@@ -95,4 +95,7 @@ dependencies {
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
     implementation("io.getstream:stream-webrtc-android:1.1.2")
     implementation("io.socket:socket.io-client:2.1.0")
+    
+    // QR Code generation
+    implementation("com.google.zxing:core:3.5.3")
 }

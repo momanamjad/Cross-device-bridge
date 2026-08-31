@@ -6,14 +6,23 @@ struct ActiveCallView: View {
     
     var body: some View {
         ZStack {
+            // Glassmorphism background
             Color.black.ignoresSafeArea()
+            LinearGradient(gradient: Gradient(colors: [Color.blue.opacity(0.3), Color.purple.opacity(0.3)]), startPoint: .topLeading, endPoint: .bottomTrailing)
+                .ignoresSafeArea()
             
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .ignoresSafeArea()
+                
             VStack(spacing: 40) {
                 Spacer()
                 
                 // Caller Name / Details
                 VStack(spacing: 8) {
                     if case .ringing(let info) = callViewModel.callState {
+                        AvatarView(name: info.callerName ?? info.callerId)
+                            .padding(.bottom, 10)
                         Text(info.callerName ?? info.callerId)
                             .font(.system(size: 32, weight: .bold))
                             .foregroundColor(.white)
@@ -25,6 +34,8 @@ struct ActiveCallView: View {
                             .font(.system(size: 24, weight: .semibold))
                             .foregroundColor(.gray)
                     } else if case .connected(let info, _) = callViewModel.callState {
+                        AvatarView(name: info.callerName ?? info.callerId)
+                            .padding(.bottom, 10)
                         Text(info.callerName ?? info.callerId)
                             .font(.system(size: 32, weight: .bold))
                             .foregroundColor(.white)
@@ -99,5 +110,30 @@ struct ActiveCallView: View {
         let minutes = Int(seconds) / 60
         let secs = Int(seconds) % 60
         return String(format: "%02d:%02d", minutes, secs)
+    }
+}
+
+struct AvatarView: View {
+    var name: String
+    
+    var initials: String {
+        let parts = name.split(separator: " ")
+        if parts.count >= 2 {
+            return String(parts[0].prefix(1) + parts[1].prefix(1)).uppercased()
+        }
+        return String(name.prefix(2)).uppercased()
+    }
+    
+    var body: some View {
+        ZStack {
+            LinearGradient(gradient: Gradient(colors: [Color.pink, Color.orange]), startPoint: .topLeading, endPoint: .bottomTrailing)
+                .clipShape(Circle())
+            
+            Text(initials)
+                .font(.system(size: 40, weight: .bold))
+                .foregroundColor(.white)
+        }
+        .frame(width: 120, height: 120)
+        .shadow(color: Color.pink.opacity(0.5), radius: 10, x: 0, y: 10)
     }
 }

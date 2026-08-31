@@ -347,11 +347,24 @@ export class WebRTCSignalServer {
     return call;
   }
 
-  public static broadcastToDevice(device: string, event: string, data: any): void {
-    const normalizedDevice = (device === "realme" || device === "realme_c3_1") ? "realme_c3_1" : "iphone";
-    logger.debug(`WebRTCSignalServer: broadcastToDevice target=${normalizedDevice} event=${event}`);
+  public static async broadcastToDevice(device: string, event: string, data: any): Promise<void> {
+    let targetDevice = device;
     const io = this.getIo();
-    io.to(`device_ext:${normalizedDevice}`).emit(event, data);
+
+    if (device === "realme" || device === "realme_c3_1") {
+      const sockets = await io.fetchSockets();
+      const androidSocket = sockets.find((s) => s.data.externalId && s.data.externalId !== "iphone");
+      if (androidSocket) {
+        targetDevice = androidSocket.data.externalId;
+      } else {
+        targetDevice = "realme_c3_1"; // fallback
+      }
+    } else {
+      targetDevice = "iphone";
+    }
+
+    logger.debug(`WebRTCSignalServer: broadcastToDevice target=${targetDevice} event=${event}`);
+    io.to(`device_ext:${targetDevice}`).emit(event, data);
   }
 
   private static async joinDevicesToCallRoom(callId: string): Promise<void> {

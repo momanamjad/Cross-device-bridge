@@ -27,6 +27,8 @@ struct DialerView: View {
             HStack(spacing: 40) {
                 // Delete Button
                 Button(action: {
+                    let impact = UIImpactFeedbackGenerator(style: .rigid)
+                    impact.impactOccurred()
                     if !phoneNumber.isEmpty {
                         phoneNumber.removeLast()
                     }
@@ -42,6 +44,8 @@ struct DialerView: View {
                 
                 // Call Button
                 Button(action: {
+                    let impact = UIImpactFeedbackGenerator(style: .heavy)
+                    impact.impactOccurred()
                     callVM.makeCall(phoneNumber: phoneNumber)
                 }) {
                     Image(systemName: "phone.fill")

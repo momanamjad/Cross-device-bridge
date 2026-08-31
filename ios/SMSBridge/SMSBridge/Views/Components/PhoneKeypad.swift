@@ -20,6 +20,8 @@ struct PhoneKeypad: View {
         LazyVGrid(columns: columns, spacing: 20) {
             ForEach(keys, id: \.self) { key in
                 Button(action: {
+                    let impact = UIImpactFeedbackGenerator(style: .light)
+                    impact.impactOccurred()
                     phoneNumber.append(key)
                 }) {
                     VStack(spacing: 2) {

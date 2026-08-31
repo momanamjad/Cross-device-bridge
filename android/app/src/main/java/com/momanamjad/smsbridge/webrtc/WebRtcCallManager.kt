@@ -113,13 +113,20 @@ object WebRtcCallManager {
         // Request CALL_PHONE permission to dial on Realme SIM if available
         if (context.checkSelfPermission(android.Manifest.permission.CALL_PHONE) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
             try {
-                val callIntent = Intent(Intent.ACTION_CALL).apply {
-                    data = android.net.Uri.parse("tel:$phoneNumber")
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(callIntent)
+                val telecomManager = context.getSystemService(Context.TELECOM_SERVICE) as android.telecom.TelecomManager
+                telecomManager.placeCall(android.net.Uri.parse("tel:$phoneNumber"), null)
+                Log.i(TAG, "Placed call using TelecomManager")
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to dial SIM number", e)
+                Log.e(TAG, "Failed to place call with TelecomManager, falling back to Intent", e)
+                try {
+                    val callIntent = Intent(Intent.ACTION_CALL).apply {
+                        data = android.net.Uri.parse("tel:$phoneNumber")
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(callIntent)
+                } catch (e2: Exception) {
+                    Log.e(TAG, "Failed to dial SIM number with Intent", e2)
+                }
             }
         } else {
             Log.w(TAG, "CALL_PHONE permission is missing. Continuing WebRTC handshake only.")

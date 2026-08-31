@@ -44,8 +44,8 @@ export async function handleIncomingCallRest(
 
     logger.info(`REST API: handleIncomingCall device=${device.externalId} caller=${body.caller_number}`);
 
-    if (device.externalId !== "realme_c3_1") {
-      throw new HttpError(403, "Only realme_c3_1 is authorized to signal incoming SIM calls");
+    if (device.externalId === "iphone") {
+      throw new HttpError(403, "iPhones are not authorized to signal incoming SIM calls");
     }
 
     if (body.device_id !== device.externalId) {

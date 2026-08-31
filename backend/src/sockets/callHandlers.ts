@@ -54,8 +54,8 @@ export function registerCallHandlers(io: Server, socket: Socket) {
   socket.on("call:incoming", async (payload: unknown) => {
     try {
       logger.info(`Socket event "call:incoming" from device=${fromDevice} payload=${JSON.stringify(payload)}`);
-      if (fromDevice !== "realme_c3_1") {
-        socket.emit("call:error", { call_id: "", error_message: "Only realme_c3_1 can signal incoming SIM calls" });
+      if (fromDevice === "iphone") {
+        socket.emit("call:error", { call_id: "", error_message: "iPhones cannot signal incoming SIM calls" });
         return;
       }
       const data = callIncomingSchema.parse(payload);
