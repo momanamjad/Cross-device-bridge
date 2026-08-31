@@ -26,9 +26,10 @@ struct SMSTabView: View {
         let ip = UserDefaults.standard.string(forKey: "server_ip") ?? ""
         let port = UserDefaults.standard.integer(forKey: "server_port")
         let token = UserDefaults.standard.string(forKey: "api_token") ?? ""
+        let secret = UserDefaults.standard.string(forKey: "register_secret") ?? ""
         
-        if !ip.isEmpty && port != 0 && !token.isEmpty {
-            smsVM.fetchSMSHistory(host: ip, port: port, token: token)
+        if !ip.isEmpty && port != 0 && !token.isEmpty && !secret.isEmpty {
+            smsVM.fetchSMSHistory(host: ip, port: port, token: token, secret: secret)
         }
     }
 }
