@@ -29,20 +29,28 @@ class NodeJsServerService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        Log.i(TAG, "Starting Node.js Server Service as Foreground...")
-        createNotificationChannel()
-        val notification = createNotification()
-        if (Build.VERSION.SDK_INT >= 34) {
-            ServiceCompat.startForeground(
-                this,
-                NOTIFICATION_ID,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
-            )
-        } else {
-            startForeground(NOTIFICATION_ID, notification)
+        try {
+            Log.i(TAG, "Starting Node.js Server Service as Foreground...")
+            createNotificationChannel()
+            val notification = createNotification()
+            if (Build.VERSION.SDK_INT >= 34) {
+                ServiceCompat.startForeground(
+                    this,
+                    NOTIFICATION_ID,
+                    notification,
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+                )
+            } else {
+                startForeground(NOTIFICATION_ID, notification)
+            }
+            startNodeJsServer()
+        } catch (e: Throwable) {
+            Log.e(TAG, "Failed to start NodeJsServerService", e)
+            try {
+                val logFile = File(filesDir, "node_out.txt")
+                logFile.appendText("\n[NodeJsServerService Error]: ${Log.getStackTraceString(e)}\n")
+            } catch (_: Exception) {}
         }
-        startNodeJsServer()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -89,8 +97,15 @@ class NodeJsServerService : Service() {
                 if (!targetDir.exists()) {
                     targetDir.mkdirs()
                 }
-                Log.d(TAG, "Extracting backend assets to: ${targetDir.absolutePath}")
-                copyAssetFolder(assets, "backend", targetDir.absolutePath)
+                val nodeModulesDir = File(targetDir, "node_modules")
+                if (!nodeModulesDir.exists() || nodeModulesDir.list().isNullOrEmpty()) {
+                    Log.d(TAG, "Initial extraction of full backend assets (including node_modules)...")
+                    copyAssetFolder(assets, "backend", targetDir.absolutePath)
+                } else {
+                    Log.d(TAG, "node_modules already exists. Updating dist folder only...")
+                    copyAssetFolder(assets, "backend/dist", File(targetDir, "dist").absolutePath)
+                    copyAssetFile(assets, "backend/package.json", File(targetDir, "package.json").absolutePath)
+                }
 
                 // Write environment variables dynamically
                 writeEnvFile(targetDir)

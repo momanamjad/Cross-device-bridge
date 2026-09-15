@@ -11,6 +11,14 @@ const app_1 = require("./app");
 const socketService_1 = require("./services/socketService");
 const logger_1 = require("./lib/logger");
 const fs_1 = __importDefault(require("fs"));
+// In embedded Android environment, process.exit kills the host Android app.
+// Intercept process.exit to prevent crashing the entire mobile app.
+const originalExit = process.exit;
+process.exit = ((code) => {
+    const msg = `[WARN] process.exit(${code}) called in Node.js - intercepted to keep host Android app alive!`;
+    console.error(msg);
+    logger_1.logger.error(msg);
+});
 if (process.env.LOG_FILE_PATH) {
     const logFilePath = process.env.LOG_FILE_PATH;
     const writeLog = (msg) => {
@@ -26,10 +34,11 @@ if (process.env.LOG_FILE_PATH) {
     console.warn = (...args) => writeLog("[WARN] " + args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '));
     process.on("uncaughtException", (err) => {
         writeLog(`[FATAL] Uncaught Exception: ${err?.stack || err}`);
-        process.exit(1);
+        logger_1.logger.error({ err }, "Uncaught Exception in Node.js");
     });
     process.on("unhandledRejection", (reason) => {
         writeLog(`[FATAL] Unhandled Rejection: ${reason}`);
+        logger_1.logger.error({ reason }, "Unhandled Rejection in Node.js");
     });
 }
 const localtunnel_1 = __importDefault(require("localtunnel"));
@@ -39,16 +48,20 @@ async function setupTunnel(port) {
         const tunnel = await (0, localtunnel_1.default)({ port });
         exports.currentTunnelUrl = tunnel.url;
         logger_1.logger.info({ tunnelUrl: tunnel.url }, "Localtunnel successfully started");
-        tunnel.on("close", () => {
-            logger_1.logger.warn("Localtunnel closed, reconnecting in 5s...");
+        tunnel.on("error", (err) => {
+            logger_1.logger.warn({ err: err?.message || err }, "Localtunnel client error");
             exports.currentTunnelUrl = null;
-            setTimeout(() => setupTunnel(port), 5000);
+        });
+        tunnel.on("close", () => {
+            logger_1.logger.warn("Localtunnel closed, reconnecting in 15s...");
+            exports.currentTunnelUrl = null;
+            setTimeout(() => setupTunnel(port), 15000);
         });
     }
     catch (err) {
-        logger_1.logger.error({ err }, "Failed to start localtunnel");
+        logger_1.logger.warn({ err: err?.message || err }, "Failed to start localtunnel (optional)");
         exports.currentTunnelUrl = null;
-        setTimeout(() => setupTunnel(port), 5000);
+        setTimeout(() => setupTunnel(port), 30000);
     }
 }
 async function main() {
@@ -63,6 +76,5 @@ async function main() {
 main().catch(async (err) => {
     logger_1.logger.error({ err }, "failed to start");
     await database_1.prisma.$disconnect();
-    process.exit(1);
 });
 //# sourceMappingURL=server.js.map
