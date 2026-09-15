@@ -19,19 +19,19 @@
             android:layout_marginTop="16dp"
             android:layout_marginBottom="24dp">
 
-            <ImageButton
+            <TextView
                 android:id="@+id/backBtn"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@android:drawable/ic_menu_revert"
-                android:contentDescription="Back"
-                app:tint="@color/bridge_text" />
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="←"
+                android:textColor="@color/bridge_accent"
+                android:textSize="32sp"
+                android:textStyle="bold"
+                android:paddingEnd="12dp" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
                 android:text="Settings"
                 android:textColor="@color/bridge_text"
                 android:textSize="28sp"

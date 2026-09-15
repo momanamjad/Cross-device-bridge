@@ -48,6 +48,9 @@ class MainActivity : AppCompatActivity() {
         binding.openSettings.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
+        binding.mainViewLogs.setOnClickListener {
+            showLogsDialog()
+        }
         refreshStatus()
         ensureRegisteredAndConnected()
         val initialIp = getDeviceWifiIp()
@@ -81,13 +84,59 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startBridge() {
-        val intent = Intent(this, BridgeForegroundService::class.java)
-        ContextCompat.startForegroundService(this, intent)
-        bridgeStarted = true
-        binding.status.text = "Bridge running..."
-        binding.statusLabel.text = "Starting..."
-        com.momanamjad.smsbridge.sync.SocketManager.connect()
-        startHealthPolling()
+        try {
+            val intent = Intent(this, BridgeForegroundService::class.java)
+            ContextCompat.startForegroundService(this, intent)
+            bridgeStarted = true
+            binding.status.text = "Bridge running..."
+            binding.statusLabel.text = "Starting..."
+            com.momanamjad.smsbridge.sync.SocketManager.connect()
+            startHealthPolling()
+        } catch (e: Throwable) {
+            android.util.Log.e("MainActivity", "Failed to start bridge service", e)
+            try {
+                val logFile = java.io.File(filesDir, "node_out.txt")
+                logFile.appendText("\n[StartBridge Error]: ${android.util.Log.getStackTraceString(e)}\n")
+            } catch (_: Exception) {}
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Failed to Start Bridge")
+                .setMessage(e.localizedMessage ?: e.toString())
+                .setPositiveButton("OK", null)
+                .show()
+        }
+    }
+
+    private fun showLogsDialog() {
+        val logFile = java.io.File(filesDir, "node_out.txt")
+        val logs = if (logFile.exists() && logFile.length() > 0) {
+            logFile.readText()
+        } else {
+            "No logs found in node_out.txt yet.\nServer IP: ${getDeviceWifiIp()}:9000\nDevice ID: ${BridgeApp.instance.settings.deviceId}\nAPI Token: ${BridgeApp.instance.settings.apiToken.take(10)}..."
+        }
+        val scrollView = android.widget.ScrollView(this)
+        val textView = android.widget.TextView(this).apply {
+            text = logs
+            textSize = 13f
+            setPadding(30, 30, 30, 30)
+            setTextColor(android.graphics.Color.WHITE)
+        }
+        scrollView.addView(textView)
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Server Logs")
+            .setView(scrollView)
+            .setPositiveButton("OK", null)
+            .setNeutralButton("Clear") { _, _ ->
+                if (logFile.exists()) {
+                    logFile.writeText("")
+                }
+            }
+            .setNegativeButton("Copy") { _, _ ->
+                val clipboard = getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                val clip = android.content.ClipData.newPlainText("Server Logs", logs)
+                clipboard.setPrimaryClip(clip)
+                android.widget.Toast.makeText(this, "Logs copied to clipboard", android.widget.Toast.LENGTH_SHORT).show()
+            }
+            .show()
     }
 
     private fun startHealthPolling() {

@@ -35,7 +35,19 @@ Java_com_momanamjad_smsbridge_service_NodeJsServerService_nodeJsStart(
     }
     argv.push_back(nullptr); // Null-terminate argv according to standards
 
+    const char* logPathChars = env->GetStringUTFChars(logPathObj, nullptr);
+    if (logPathChars != nullptr && strlen(logPathChars) > 0) {
+        freopen(logPathChars, "a", stdout);
+        freopen(logPathChars, "a", stderr);
+        setvbuf(stdout, nullptr, _IONBF, 0);
+        setvbuf(stderr, nullptr, _IONBF, 0);
+    }
+
     __android_log_print(ANDROID_LOG_INFO, LOG_TAG, "Starting Node.js event loop...");
     // Start Node.js using the correct namespace function
     node::Start(argc, argv.data());
+
+    if (logPathChars != nullptr) {
+        env->ReleaseStringUTFChars(logPathObj, logPathChars);
+    }
 }

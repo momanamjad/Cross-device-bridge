@@ -100,10 +100,19 @@ class SettingsActivity : AppCompatActivity() {
                     }
                     .show()
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             Log.e("SettingsActivity", "Fatal error in SettingsActivity.onCreate", e)
-            Toast.makeText(this, "Error opening settings: ${e.message}", Toast.LENGTH_LONG).show()
-            finish()
+            val stackTrace = Log.getStackTraceString(e)
+            try {
+                val logFile = java.io.File(filesDir, "node_out.txt")
+                logFile.appendText("\n[Settings Error]: $stackTrace\n")
+            } catch (_: Exception) {}
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Settings Error")
+                .setMessage("${e.javaClass.simpleName}: ${e.message}\n\n$stackTrace")
+                .setPositiveButton("Close") { _, _ -> finish() }
+                .setCancelable(false)
+                .show()
         }
     }
 

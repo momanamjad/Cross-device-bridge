@@ -24,21 +24,29 @@ class BridgeForegroundService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        createChannel()
-        val notification = buildNotification()
-        if (Build.VERSION.SDK_INT >= 34) {
-            ServiceCompat.startForeground(
-                this,
-                NOTIFICATION_ID,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC or
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE,
-            )
-        } else {
-            startForeground(NOTIFICATION_ID, notification)
+        try {
+            createChannel()
+            val notification = buildNotification()
+            if (Build.VERSION.SDK_INT >= 34) {
+                ServiceCompat.startForeground(
+                    this,
+                    NOTIFICATION_ID,
+                    notification,
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC or
+                        ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE,
+                )
+            } else {
+                startForeground(NOTIFICATION_ID, notification)
+            }
+            registerCallCallback()
+            com.momanamjad.smsbridge.sync.SocketManager.connect()
+        } catch (e: Throwable) {
+            Log.e(TAG, "Failed to start foreground service", e)
+            try {
+                val logFile = java.io.File(filesDir, "node_out.txt")
+                logFile.appendText("\n[BridgeForegroundService Error]: ${Log.getStackTraceString(e)}\n")
+            } catch (_: Exception) {}
         }
-        registerCallCallback()
-        com.momanamjad.smsbridge.sync.SocketManager.connect()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -120,7 +128,7 @@ class BridgeForegroundService : Service() {
             PendingIntent.FLAG_IMMUTABLE,
         )
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(com.momanamjad.smsbridge.R.mipmap.ic_launcher)
             .setContentTitle(getString(R.string.fg_title))
             .setContentText(getString(R.string.fg_text))
             .setOngoing(true)
