@@ -329,6 +329,8 @@ export class WebRTCSignalServer {
 
     // Keep existing events for backward compatibility
     io.to(`call_${callId}`).emit("call:hangup", {
+      call_id: callId,
+      duration: calculatedDuration,
       data: encryptPayload({
         call_id: callId,
         duration: calculatedDuration,
@@ -372,8 +374,13 @@ export class WebRTCSignalServer {
     }
 
     logger.debug(`WebRTCSignalServer: broadcastToDevice target=${targetDevice} event=${event}`);
-    const encrypted = encryptPayload(data, env.registerSecret);
-    io.to(`device_ext:${targetDevice}`).emit(event, { data: encrypted });
+    if (targetDevice === "iphone") {
+      const encrypted = encryptPayload(data, env.registerSecret);
+      io.to(`device_ext:${targetDevice}`).emit(event, { data: encrypted, ...data });
+    } else {
+      // Android client expects raw JSON fields for immediate zero-overhead processing
+      io.to(`device_ext:${targetDevice}`).emit(event, data);
+    }
   }
 
   private static async joinDevicesToCallRoom(callId: string): Promise<void> {

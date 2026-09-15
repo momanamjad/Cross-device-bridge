@@ -1,5 +1,14 @@
+param(
+    [string]$DeviceIp = ""
+)
+
 # Define ADB path
 $adb = "C:\Users\DELL\android-sdk\platform-tools\adb.exe"
+
+if ($DeviceIp -ne "") {
+    Write-Host "Connecting wirelessly to $DeviceIp:5555..." -ForegroundColor Cyan
+    & $adb connect "$($DeviceIp):5555"
+}
 
 # 1. Build the APK
 Write-Host "==============================================" -ForegroundColor Yellow
@@ -25,12 +34,18 @@ Write-Host "==============================================" -ForegroundColor Yel
 Write-Host "2/4 Checking connected devices..." -ForegroundColor Cyan
 Write-Host "==============================================" -ForegroundColor Yellow
 
+if ($DeviceIp -ne "") {
+    & $adb connect "$($DeviceIp):5555"
+}
+
 $devices = & $adb devices
 Write-Host $devices
 
 if ($devices.Count -le 2) {
     Write-Host "Warning: No device detected by ADB!" -ForegroundColor Red
-    Write-Host "Please make sure your phone is connected, USB Debugging is ON in Developer Settings, and USB mode is set to 'File Transfer'." -ForegroundColor Yellow
+    Write-Host "Options:" -ForegroundColor Yellow
+    Write-Host " 1. Connect phone via USB with USB Debugging turned ON." -ForegroundColor Yellow
+    Write-Host " 2. Or pass wireless IP: .\install_and_run.ps1 -DeviceIp <phone_wifi_ip>" -ForegroundColor Yellow
     exit 1
 }
 

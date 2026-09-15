@@ -56,7 +56,7 @@ object SocketManager {
                 }
 
                 on("call:incoming") { args ->
-                    val data = args.getOrNull(0) as? JSONObject ?: return@on
+                    val data = extractData(args) ?: return@on
                     val callId = data.optString("call_id")
                     val callerNumber = data.optString("caller_number")
                     Log.i(TAG, "Socket received call:incoming callId=$callId callerNumber=$callerNumber")
@@ -66,7 +66,7 @@ object SocketManager {
                 }
 
                 on("call:outgoing") { args ->
-                    val data = args.getOrNull(0) as? JSONObject ?: return@on
+                    val data = extractData(args) ?: return@on
                     val callId = data.optString("call_id")
                     val phoneNumber = data.optString("phone_number")
                     Log.i(TAG, "Socket received call:outgoing callId=$callId phoneNumber=$phoneNumber")
@@ -76,7 +76,7 @@ object SocketManager {
                 }
 
                 on("call:accept-ack") { args ->
-                    val data = args.getOrNull(0) as? JSONObject ?: return@on
+                    val data = extractData(args) ?: return@on
                     val callId = data.optString("call_id")
                     Log.i(TAG, "Socket received call:accept-ack callId=$callId")
                     scope.launch {
@@ -85,7 +85,7 @@ object SocketManager {
                 }
 
                 on("webrtc:offer") { args ->
-                    val data = args.getOrNull(0) as? JSONObject ?: return@on
+                    val data = extractData(args) ?: return@on
                     val callId = data.optString("call_id")
                     val sdpOffer = data.optString("sdp_offer")
                     Log.i(TAG, "Socket received webrtc:offer callId=$callId")
@@ -95,7 +95,7 @@ object SocketManager {
                 }
 
                 on("webrtc:answer") { args ->
-                    val data = args.getOrNull(0) as? JSONObject ?: return@on
+                    val data = extractData(args) ?: return@on
                     val callId = data.optString("call_id")
                     val sdpAnswer = data.optString("sdp_answer")
                     Log.i(TAG, "Socket received webrtc:answer callId=$callId")
@@ -105,7 +105,7 @@ object SocketManager {
                 }
 
                 on("webrtc:ice-candidate") { args ->
-                    val data = args.getOrNull(0) as? JSONObject ?: return@on
+                    val data = extractData(args) ?: return@on
                     val callId = data.optString("call_id")
                     val candidate = data.opt("candidate") ?: return@on
                     Log.d(TAG, "Socket received webrtc:ice-candidate callId=$callId candidate=$candidate")
@@ -115,7 +115,7 @@ object SocketManager {
                 }
 
                 on("call:hangup") { args ->
-                    val data = args.getOrNull(0) as? JSONObject ?: return@on
+                    val data = extractData(args) ?: return@on
                     val callId = data.optString("call_id")
                     Log.i(TAG, "Socket received call:hangup callId=$callId")
                     scope.launch {
@@ -124,7 +124,7 @@ object SocketManager {
                 }
 
                 on("file:received") { args ->
-                    val data = args.getOrNull(0) as? JSONObject ?: return@on
+                    val data = extractData(args) ?: return@on
                     val url = data.optString("url")
                     val filename = data.optString("filename")
                     if (url.isNotEmpty() && filename.isNotEmpty()) {
@@ -139,6 +139,16 @@ object SocketManager {
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to initialize Socket.io client", e)
+        }
+    }
+
+    private fun extractData(args: Array<out Any?>): JSONObject? {
+        val first = args.getOrNull(0) ?: return null
+        return when (first) {
+            is JSONObject -> first
+            is String -> try { JSONObject(first) } catch (_: Exception) { null }
+            is Map<*, *> -> try { JSONObject(first) } catch (_: Exception) { null }
+            else -> null
         }
     }
 

@@ -61,9 +61,8 @@ struct ActiveCallView: View {
                 HStack(spacing: 40) {
                     // Mute control
                     Button(action: {
-                        isMuted.toggle()
-                        callViewModel.micMuted = isMuted
-                        // Typically we would mute local audio track in WebRTCService
+                        callViewModel.toggleMute()
+                        isMuted = callViewModel.micMuted
                     }) {
                         VStack(spacing: 8) {
                             Image(systemName: isMuted ? "mic.slash.fill" : "mic.fill")

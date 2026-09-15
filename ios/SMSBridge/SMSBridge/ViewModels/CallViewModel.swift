@@ -167,6 +167,11 @@ class CallViewModel: ObservableObject {
         AudioService.shared.setSpeakerEnabled(audioOutputSpeaker)
     }
     
+    func toggleMute() {
+        micMuted.toggle()
+        webrtc.setAudioEnabled(!micMuted)
+    }
+    
     private func startTimer() {
         callDuration = 0
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in

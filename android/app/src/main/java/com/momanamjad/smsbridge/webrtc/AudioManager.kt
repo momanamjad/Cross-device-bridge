@@ -18,7 +18,7 @@ class AudioManager(private val context: Context) {
     private val androidAudioManager = context.getSystemService(Context.AUDIO_SERVICE) as AndroidAudioManager
     private var activeAudioTrack: AudioTrack? = null
     private var isMicrophoneEnabled = true
-    private var isSpeakerEnabled = true
+    private var isSpeakerEnabled = false // Default to silent/earpiece, never blast loudspeaker on bridge device
     private var focusRequest: AudioFocusRequest? = null
 
     fun startAudioCapture(audioTrack: AudioTrack) {
@@ -38,8 +38,8 @@ class AudioManager(private val context: Context) {
     fun playRemoteAudio(audioTrack: AudioTrack) {
         Log.i(TAG, "Playing remote audio track=${audioTrack.id()}")
         audioTrack.setEnabled(true)
-        // Ensure volume is set and routed to speaker/earpiece
-        setSpeakerEnabled(isSpeakerEnabled)
+        // Keep bridge device silent - do not route to loudspeaker
+        setSpeakerEnabled(false)
     }
 
     fun setMicrophoneEnabled(enabled: Boolean) {
@@ -53,12 +53,7 @@ class AudioManager(private val context: Context) {
         isSpeakerEnabled = enabled
         try {
             androidAudioManager.isSpeakerphoneOn = enabled
-            if (enabled) {
-                androidAudioManager.mode = AndroidAudioManager.MODE_IN_COMMUNICATION
-            } else {
-                // If not speaker, route to earpiece
-                androidAudioManager.mode = AndroidAudioManager.MODE_IN_COMMUNICATION
-            }
+            androidAudioManager.mode = AndroidAudioManager.MODE_IN_COMMUNICATION
         } catch (e: Exception) {
             Log.e(TAG, "Failed to set speakerphone: ${e.message}", e)
         }

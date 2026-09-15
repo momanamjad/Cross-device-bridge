@@ -146,15 +146,23 @@ struct SettingsView: View {
                     if let tunnel = json["tunnel_url"] as? String { self.tunnelUrl = tunnel }
                     if let secret = json["secret"] as? String { self.registerSecret = secret }
                     
-                    self.alertMessage = "QR Code scanned successfully! Registering..."
-                    self.showAlert = true
+                    let token = json["token"] as? String
                     
                     let impact = UINotificationFeedbackGenerator()
                     impact.notificationOccurred(.success)
-                    
-                    // Auto register
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                        self.registerDevice()
+
+                    if let token = token, !token.isEmpty {
+                        self.apiToken = token
+                        self.saveSettings()
+                        self.connect()
+                        self.alertMessage = "Connected to Android Bridge immediately!"
+                        self.showAlert = true
+                    } else {
+                        self.alertMessage = "QR Code scanned! Registering device..."
+                        self.showAlert = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            self.registerDevice()
+                        }
                     }
                 } else {
                     self.alertMessage = "Invalid QR Code format."
@@ -187,26 +195,35 @@ struct SettingsView: View {
         
         Task {
             let candidates = generateCandidateIPs()
-            for ip in candidates {
-                if let foundIP = await tryHealth(ip: ip, port: port) {
-                    DispatchQueue.main.async {
-                        self.serverIP = foundIP
-                        self.isDiscovering = false
-                        self.alertMessage = "Found Android server at \(foundIP)!"
-                        self.showAlert = true
-                        let impact = UINotificationFeedbackGenerator()
-                        impact.notificationOccurred(.success)
+            let foundIP = await withTaskGroup(of: String?.self, returning: String?.self) { group in
+                for ip in candidates {
+                    group.addTask {
+                        await tryHealth(ip: ip, port: port)
                     }
-                    return
                 }
+                for await result in group {
+                    if let valid = result {
+                        group.cancelAll()
+                        return valid
+                    }
+                }
+                return nil
             }
             
             DispatchQueue.main.async {
                 self.isDiscovering = false
-                self.alertMessage = "Could not find Android server on network."
-                self.showAlert = true
-                let impact = UINotificationFeedbackGenerator()
-                impact.notificationOccurred(.error)
+                if let found = foundIP {
+                    self.serverIP = found
+                    self.alertMessage = "Found Android server at \(found)! Tap Connect & Save."
+                    self.showAlert = true
+                    let impact = UINotificationFeedbackGenerator()
+                    impact.notificationOccurred(.success)
+                } else {
+                    self.alertMessage = "Could not find Android server on network. Please ensure Wi-Fi is shared or scan QR."
+                    self.showAlert = true
+                    let impact = UINotificationFeedbackGenerator()
+                    impact.notificationOccurred(.error)
+                }
             }
         }
     }

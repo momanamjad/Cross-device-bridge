@@ -49,6 +49,11 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
         refreshStatus()
+        ensureRegisteredAndConnected()
+        val initialIp = getDeviceWifiIp()
+        if (initialIp != "127.0.0.1") {
+            generateQRCode(initialIp, "")
+        }
     }
 
     override fun onResume() {
@@ -100,12 +105,16 @@ class MainActivity : AppCompatActivity() {
                 val json = JSONObject(response)
                 val status = json.optString("status", "unknown")
                 val uptime = json.optInt("uptime", 0)
-                val serverIP = json.optString("server_ip", "--")
+                val rawServerIP = json.optString("server_ip", "--")
+                val wifiIp = getDeviceWifiIp()
+                val serverIP = if (rawServerIP != "--" && rawServerIP != "127.0.0.1") rawServerIP else wifiIp
                 val tunnelUrl = json.optString("tunnel_url", "")
 
                 val uptimeText = if (uptime >= 3600) "${uptime / 3600}h ${(uptime % 3600) / 60}m"
                                  else if (uptime >= 60) "${uptime / 60}m ${uptime % 60}s"
                                  else "${uptime}s"
+
+                ensureRegisteredAndConnected()
 
                 withContext(Dispatchers.Main) {
                     binding.statusLabel.text = if (status == "ok") "Server Running" else "Degraded"
@@ -121,35 +130,110 @@ class MainActivity : AppCompatActivity() {
                         binding.statIP.text = serverIP
                     }
 
-                    if (status == "ok" && serverIP != "--" && serverIP != "127.0.0.1") {
+                    if (serverIP != "--") {
                         generateQRCode(serverIP, tunnelUrl)
                     } else {
                         binding.qrCard.visibility = View.GONE
                     }
                 }
             } catch (_: Exception) {
+                val wifiIp = getDeviceWifiIp()
                 withContext(Dispatchers.Main) {
-                    binding.statusLabel.text = "Server Offline"
+                    binding.statusLabel.text = "Server Starting..."
                     binding.statusDot.setBackgroundResource(R.drawable.status_dot_red)
                     binding.statUptime.text = "--"
-                    binding.statIP.text = "--"
-                    binding.qrCard.visibility = View.GONE
+                    binding.statIP.text = wifiIp
+                    if (wifiIp != "127.0.0.1") {
+                        generateQRCode(wifiIp, "")
+                    } else {
+                        binding.qrCard.visibility = View.GONE
+                    }
                 }
             }
         }
         handler.postDelayed({ pollHealth() }, 5000)
     }
 
+    private fun getDeviceWifiIp(): String {
+        try {
+            val interfaces = java.net.NetworkInterface.getNetworkInterfaces() ?: return "127.0.0.1"
+            var candidateIp: String? = null
+            for (iface in interfaces) {
+                if (iface.isLoopback || !iface.isUp) continue
+                val addrs = iface.inetAddresses
+                for (addr in addrs) {
+                    if (!addr.isLoopbackAddress && addr is java.net.Inet4Address) {
+                        val ip = addr.hostAddress ?: continue
+                        if (iface.name.startsWith("wlan") || iface.name.startsWith("eth")) {
+                            return ip
+                        }
+                        if (ip.startsWith("192.168.") || ip.startsWith("10.") || ip.startsWith("172.")) {
+                            candidateIp = ip
+                        }
+                    }
+                }
+            }
+            return candidateIp ?: "127.0.0.1"
+        } catch (_: Exception) {
+            return "127.0.0.1"
+        }
+    }
+
+    private fun ensureRegisteredAndConnected() {
+        val settings = BridgeApp.instance.settings
+        if (settings.apiToken.isNotBlank()) {
+            com.momanamjad.smsbridge.sync.SocketManager.connect()
+            return
+        }
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val secret = settings.registerSecret.ifBlank { "super_secret_bridge_key" }
+                val baseUrl = settings.backendUrl.trimEnd('/')
+                val url = java.net.URL("$baseUrl/api/devices/register")
+                val conn = url.openConnection() as java.net.HttpURLConnection
+                conn.connectTimeout = 3000
+                conn.readTimeout = 3000
+                conn.requestMethod = "POST"
+                conn.setRequestProperty("Content-Type", "application/json")
+                conn.setRequestProperty("X-Register-Secret", secret)
+                conn.doOutput = true
+                val reqBody = JSONObject().apply {
+                    put("device_id", settings.deviceId)
+                    put("device_name", android.os.Build.MODEL)
+                    put("device_type", "android")
+                    put("os_version", android.os.Build.VERSION.RELEASE)
+                }.toString()
+                conn.outputStream.use { it.write(reqBody.toByteArray()) }
+                if (conn.responseCode in 200..299) {
+                    val resp = conn.inputStream.bufferedReader().readText()
+                    val respJson = JSONObject(resp)
+                    val token = respJson.optString("api_token")
+                    if (token.isNotBlank()) {
+                        settings.apiToken = token
+                        android.util.Log.i("MainActivity", "Auto-registered Android bridge successfully.")
+                        com.momanamjad.smsbridge.sync.SocketManager.connect()
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.w("MainActivity", "Auto-registration pending: ${e.message}")
+            }
+        }
+    }
+
     private fun generateQRCode(ip: String, tunnelUrl: String) {
-        if (binding.qrCard.visibility == View.VISIBLE) return // Already generated
+        if (binding.qrCard.visibility == View.VISIBLE && binding.qrImage.drawable != null) return
 
         val settings = BridgeApp.instance.settings
         val secret = settings.registerSecret.ifBlank { "super_secret_bridge_key" }
-        // JSON payload for QR code
+        val token = settings.apiToken
+        // JSON payload for QR code with credentials included
         val qrData = JSONObject().apply {
             put("ip", ip)
             put("port", 9000)
             put("secret", secret)
+            if (token.isNotEmpty()) {
+                put("token", token)
+            }
             if (tunnelUrl.isNotEmpty()) {
                 put("tunnel_url", tunnelUrl)
             }
@@ -168,10 +252,9 @@ class MainActivity : AppCompatActivity() {
             }
             binding.qrImage.setImageBitmap(bitmap)
             
-            // Animated reveal
             binding.qrCard.alpha = 0f
             binding.qrCard.visibility = View.VISIBLE
-            binding.qrCard.animate().alpha(1f).setDuration(500).start()
+            binding.qrCard.animate().alpha(1f).setDuration(400).start()
         } catch (e: Exception) {
             e.printStackTrace()
         }

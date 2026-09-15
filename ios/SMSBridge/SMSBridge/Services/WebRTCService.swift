@@ -123,6 +123,11 @@ class WebRTCService: NSObject {
         peerConnection?.add(candidate)
     }
     
+    func setAudioEnabled(_ enabled: Bool) {
+        audioTrack?.isEnabled = enabled
+        print("WebRTC: Local audio track enabled=\(enabled)")
+    }
+    
     func close() {
         peerConnection?.close()
         peerConnection = nil

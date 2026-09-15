@@ -48,15 +48,7 @@ object WebRtcCallManager {
         isIncomingCall = true
         startTimeMillis = System.currentTimeMillis()
         updateState(CallState.RingingIncoming(callerNumber))
-
-        // Launch the call screen
-        val intent = Intent(context, VoiceCallActivity::class.java).apply {
-            putExtra("call_id", callId)
-            putExtra("phone_number", callerNumber)
-            putExtra("is_incoming", true)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        context.startActivity(intent)
+        Log.i(TAG, "Bridge: Headless incoming call forwarding active for $callerNumber")
     }
 
     suspend fun acceptIncomingCall(callId: String) {
@@ -100,15 +92,7 @@ object WebRtcCallManager {
         isIncomingCall = false
         startTimeMillis = System.currentTimeMillis()
         updateState(CallState.RingingOutgoing(phoneNumber))
-
-        // Launch Call Screen UI
-        val intent = Intent(context, VoiceCallActivity::class.java).apply {
-            putExtra("call_id", callId)
-            putExtra("phone_number", phoneNumber)
-            putExtra("is_incoming", false)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        context.startActivity(intent)
+        Log.i(TAG, "Bridge: Headless outgoing call forwarding active for $phoneNumber")
 
         // Request CALL_PHONE permission to dial on Realme SIM if available
         if (context.checkSelfPermission(android.Manifest.permission.CALL_PHONE) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
