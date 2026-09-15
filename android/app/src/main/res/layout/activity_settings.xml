@@ -11,16 +11,33 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <TextView
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
             android:layout_marginTop="16dp"
-            android:layout_marginBottom="24dp"
-            android:text="Settings"
-            android:textColor="@color/bridge_text"
-            android:textSize="28sp"
-            android:textStyle="bold"
-            android:fontFamily="sans-serif-black" />
+            android:layout_marginBottom="24dp">
+
+            <ImageButton
+                android:id="@+id/backBtn"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_revert"
+                android:contentDescription="Back"
+                app:tint="@color/bridge_text" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Settings"
+                android:textColor="@color/bridge_text"
+                android:textSize="28sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-black" />
+        </LinearLayout>
 
         <!-- Card 1: Server Configuration -->
         <TextView
@@ -53,7 +70,7 @@
                     android:hint="Backend Server URL"
                     app:boxStrokeColor="@color/bridge_accent"
                     app:hintTextColor="@color/bridge_accent"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/backendUrl"
@@ -70,7 +87,7 @@
                     android:hint="Device Identifier"
                     app:boxStrokeColor="@color/bridge_accent"
                     app:hintTextColor="@color/bridge_accent"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/deviceId"
@@ -114,8 +131,9 @@
                     android:hint="Register Secret"
                     app:boxStrokeColor="@color/bridge_accent"
                     app:hintTextColor="@color/bridge_accent"
-                    app:passwordToggleEnabled="true"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                    app:endIconMode="password_toggle"
+                    app:endIconTint="@color/bridge_accent"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/registerSecret"
@@ -132,8 +150,9 @@
                     android:hint="API Access Token"
                     app:boxStrokeColor="@color/bridge_accent"
                     app:hintTextColor="@color/bridge_accent"
-                    app:passwordToggleEnabled="true"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                    app:endIconMode="password_toggle"
+                    app:endIconTint="@color/bridge_accent"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/apiToken"
@@ -171,7 +190,7 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
-                <com.google.android.material.switchmaterial.SwitchMaterial
+                <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/smsEnabled"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -186,7 +205,7 @@
                     android:layout_marginTop="8dp"
                     android:layout_marginBottom="8dp" />
 
-                <com.google.android.material.switchmaterial.SwitchMaterial
+                <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/callsEnabled"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

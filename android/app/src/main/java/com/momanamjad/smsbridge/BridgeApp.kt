@@ -20,6 +20,18 @@ class BridgeApp : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
+
+        val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            try {
+                val stackTrace = android.util.Log.getStackTraceString(throwable)
+                android.util.Log.e("BridgeApp", "FATAL CRASH on ${thread.name}: $stackTrace", throwable)
+                val logFile = java.io.File(filesDir, "node_out.txt")
+                logFile.appendText("\n[FATAL CRASH on ${thread.name}]:\n$stackTrace\n")
+            } catch (_: Exception) {}
+            defaultHandler?.uncaughtException(thread, throwable)
+        }
+
         database = AppDatabase.build(this)
         settings = SecureSettings(this)
         scheduleSync()
