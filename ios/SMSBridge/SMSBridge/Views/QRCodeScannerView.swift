@@ -1,7 +1,28 @@
 import SwiftUI
 import AVFoundation
 
-struct QRCodeScannerView: UIViewControllerRepresentable {
+struct QRCodeScannerView: View {
+    @Binding var scannedCode: String?
+    @Environment(\.presentationMode) var presentationMode
+
+    var body: some View {
+        NavigationView {
+            QRCodeScannerRepresentable(scannedCode: $scannedCode)
+                .edgesIgnoringSafeArea(.bottom)
+                .navigationTitle("Scan Android QR")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("Cancel") {
+                            presentationMode.wrappedValue.dismiss()
+                        }
+                    }
+                }
+        }
+    }
+}
+
+struct QRCodeScannerRepresentable: UIViewControllerRepresentable {
     @Binding var scannedCode: String?
     @Environment(\.presentationMode) var presentationMode
 
@@ -18,9 +39,9 @@ struct QRCodeScannerView: UIViewControllerRepresentable {
     }
 
     class Coordinator: NSObject, ScannerViewControllerDelegate {
-        var parent: QRCodeScannerView
+        var parent: QRCodeScannerRepresentable
 
-        init(_ parent: QRCodeScannerView) {
+        init(_ parent: QRCodeScannerRepresentable) {
             self.parent = parent
         }
 
@@ -36,16 +57,51 @@ protocol ScannerViewControllerDelegate: AnyObject {
 }
 
 class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate {
-    var captureSession: AVCaptureSession!
-    var previewLayer: AVCaptureVideoPreviewLayer!
+    var captureSession: AVCaptureSession?
+    var previewLayer: AVCaptureVideoPreviewLayer?
     weak var delegate: ScannerViewControllerDelegate?
 
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = UIColor.black
-        captureSession = AVCaptureSession()
+        checkCameraPermissionsAndSetup()
+    }
 
-        guard let videoCaptureDevice = AVCaptureDevice.default(for: .video) else { return }
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        if captureSession?.isRunning == true {
+            captureSession?.stopRunning()
+        }
+    }
+
+    private func checkCameraPermissionsAndSetup() {
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        case .authorized:
+            setupCaptureSession()
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
+                DispatchQueue.main.async {
+                    if granted {
+                        self?.setupCaptureSession()
+                    } else {
+                        self?.showPermissionDeniedMessage()
+                    }
+                }
+            }
+        case .denied, .restricted:
+            showPermissionDeniedMessage()
+        @unknown default:
+            showPermissionDeniedMessage()
+        }
+    }
+
+    private func setupCaptureSession() {
+        guard let videoCaptureDevice = AVCaptureDevice.default(for: .video) else {
+            showNoCameraMessage()
+            return
+        }
+
+        let session = AVCaptureSession()
         let videoInput: AVCaptureDeviceInput
 
         do {
@@ -54,33 +110,33 @@ class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDel
             return
         }
 
-        if (captureSession.canAddInput(videoInput)) {
-            captureSession.addInput(videoInput)
+        if session.canAddInput(videoInput) {
+            session.addInput(videoInput)
         } else {
             return
         }
 
         let metadataOutput = AVCaptureMetadataOutput()
-
-        if (captureSession.canAddOutput(metadataOutput)) {
-            captureSession.addOutput(metadataOutput)
-
+        if session.canAddOutput(metadataOutput) {
+            session.addOutput(metadataOutput)
             metadataOutput.setMetadataObjectsDelegate(self, queue: DispatchQueue.main)
             metadataOutput.metadataObjectTypes = [.qr]
         } else {
             return
         }
 
-        previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
-        previewLayer.frame = view.layer.bounds
-        previewLayer.videoGravity = .resizeAspectFill
-        view.layer.addSublayer(previewLayer)
+        self.captureSession = session
+        let layer = AVCaptureVideoPreviewLayer(session: session)
+        layer.frame = view.layer.bounds
+        layer.videoGravity = .resizeAspectFill
+        view.layer.addSublayer(layer)
+        self.previewLayer = layer
 
-        // Add a scanning reticle overlay
+        // Reticle
         let reticle = UIView()
-        reticle.layer.borderColor = UIColor.green.cgColor
+        reticle.layer.borderColor = UIColor.systemGreen.cgColor
         reticle.layer.borderWidth = 3
-        reticle.layer.cornerRadius = 12
+        reticle.layer.cornerRadius = 16
         reticle.backgroundColor = .clear
         reticle.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(reticle)
@@ -92,12 +148,46 @@ class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDel
         ])
 
         DispatchQueue.global(qos: .background).async {
-            self.captureSession.startRunning()
+            session.startRunning()
         }
     }
 
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        previewLayer?.frame = view.layer.bounds
+    }
+
+    private func showPermissionDeniedMessage() {
+        let label = UILabel()
+        label.text = "Camera access is needed to scan QR code.\nPlease enable Camera permission in iOS Settings."
+        label.textColor = .white
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        label.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(label)
+        NSLayoutConstraint.activate([
+            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            label.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            label.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 32),
+            label.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -32)
+        ])
+    }
+
+    private func showNoCameraMessage() {
+        let label = UILabel()
+        label.text = "Camera is not available on this device."
+        label.textColor = .white
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(label)
+        NSLayoutConstraint.activate([
+            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            label.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+        ])
+    }
+
     func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
-        captureSession.stopRunning()
+        captureSession?.stopRunning()
 
         if let metadataObject = metadataObjects.first {
             guard let readableObject = metadataObject as? AVMetadataMachineReadableCodeObject else { return }

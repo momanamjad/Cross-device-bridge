@@ -57,16 +57,22 @@ class WebSocketService: ObservableObject {
         socket = manager?.defaultSocket
         
         socket?.on(clientEvent: .connect) { [weak self] _, _ in
+            AppLog("WebSocket connected successfully to \(urlStr)", tag: "WS")
             DispatchQueue.main.async {
                 self?.isConnected = true
                 self?.fallbackWorkItem?.cancel()
             }
         }
         
-        socket?.on(clientEvent: .disconnect) { [weak self] _, _ in
+        socket?.on(clientEvent: .disconnect) { [weak self] data, _ in
+            AppLog("WebSocket disconnected: \(data)", tag: "WS")
             DispatchQueue.main.async {
                 self?.isConnected = false
             }
+        }
+        
+        socket?.on(clientEvent: .error) { data, _ in
+            AppLog("WebSocket error: \(data)", tag: "WS")
         }
         
         func decrypt(_ data: [Any]) -> [String: Any]? {
@@ -82,6 +88,7 @@ class WebSocketService: ObservableObject {
                   let callId = dict["call_id"] as? String,
                   let callerNumber = dict["caller_number"] as? String else { return }
             
+            AppLog("Incoming call received: \(callerNumber) (ID: \(callId))", tag: "CALL")
             let info = CallInfo(callId: callId, callerId: callerNumber, callerName: nil, isIncoming: true, timestamp: Date())
             self?.onIncomingCall?(info)
         }
@@ -89,6 +96,7 @@ class WebSocketService: ObservableObject {
         socket?.on("call:connected") { [weak self] data, _ in
             guard let dict = decrypt(data),
                   let callId = dict["call_id"] as? String else { return }
+            AppLog("Call connected: \(callId)", tag: "CALL")
             self?.onCallConnected?(callId)
         }
         
@@ -96,7 +104,7 @@ class WebSocketService: ObservableObject {
             guard let dict = decrypt(data),
                   let callId = dict["call_id"] as? String else { return }
             let duration = dict["duration"] as? Double ?? dict["duration_seconds"] as? Double ?? 0.0
-            print("✅ Call ended event received: \(callId), duration: \(duration)s")
+            AppLog("Call ended: \(callId), duration: \(duration)s", tag: "CALL")
             self?.onCallEnded?(callId, duration)
         }
         
@@ -104,6 +112,7 @@ class WebSocketService: ObservableObject {
             guard let dict = decrypt(data),
                   let callId = dict["call_id"] as? String,
                   let sdp = dict["sdp_offer"] as? String else { return }
+            AppLog("Received WebRTC Offer for call \(callId) (SDP length: \(sdp.count))", tag: "WEBRTC")
             self?.onWebRTCOffer?(callId, sdp)
         }
         
@@ -111,6 +120,7 @@ class WebSocketService: ObservableObject {
             guard let dict = decrypt(data),
                   let callId = dict["call_id"] as? String,
                   let candidate = dict["candidate"] as? [String: Any] else { return }
+            AppLog("Received ICE candidate for call \(callId)", tag: "WEBRTC")
             self?.onICECandidate?(callId, candidate)
         }
         
@@ -120,6 +130,7 @@ class WebSocketService: ObservableObject {
                   let sender = dict["sender"] as? String,
                   let content = dict["message"] as? String ?? dict["content"] as? String else { return }
             
+            AppLog("Received SMS from \(sender): \(content.prefix(30))...", tag: "SMS")
             let message = SMSMessage(id: id, sender: sender, content: content, timestamp: Date())
             self?.onSMSReceived?(message)
             
@@ -132,6 +143,7 @@ class WebSocketService: ObservableObject {
     }
     
     func emit(_ event: String, _ items: [String: Any]) {
+        AppLog("Emitting [\(event)]: \(items.keys.joined(separator: ", "))", tag: "WS")
         guard let secret = UserDefaults.standard.string(forKey: "register_secret") else {
             socket?.emit(event, with: [items], completion: nil)
             return
@@ -142,7 +154,7 @@ class WebSocketService: ObservableObject {
             let encrypted = try CryptoHelper.encryptPayload(data, secret: secret)
             socket?.emit(event, with: [["data": encrypted]], completion: nil)
         } catch {
-            print("Encryption failed for emit: \(error)")
+            AppLog("Encryption failed for emit \(event): \(error)", tag: "WS")
             socket?.emit(event, with: [items], completion: nil)
         }
     }

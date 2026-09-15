@@ -124,6 +124,7 @@ class CallViewModel: ObservableObject {
     func makeCall(phoneNumber: String) {
         let callId = UUID().uuidString.lowercased()
         activeCallId = callId
+        AppLog("Initiating outgoing call to \(phoneNumber) [callId: \(callId)]", tag: "CALL")
         
         let info = CallInfo(callId: callId, callerId: phoneNumber, callerName: nil, isIncoming: false, timestamp: Date())
         callState = .connecting(info)
@@ -138,6 +139,7 @@ class CallViewModel: ObservableObject {
     
     func acceptCall() {
         guard let callId = activeCallId, case .ringing(let info) = callState else { return }
+        AppLog("Accepting incoming call [callId: \(callId)]", tag: "CALL")
         
         AudioService.shared.stopRingtone()
         callState = .connecting(info)
@@ -148,6 +150,7 @@ class CallViewModel: ObservableObject {
     
     func rejectCall() {
         guard let callId = activeCallId else { return }
+        AppLog("Rejecting call [callId: \(callId)]", tag: "CALL")
         AudioService.shared.stopRingtone()
         ws.emit("call:reject", ["call_id": callId])
         callState = .idle
@@ -157,6 +160,7 @@ class CallViewModel: ObservableObject {
     
     func endCall() {
         guard let callId = activeCallId else { return }
+        AppLog("Ending call [callId: \(callId)]", tag: "CALL")
         ws.emit("call:hangup", ["call_id": callId])
         CallKitManager.shared.endCall(id: callId)
         cleanupCall()

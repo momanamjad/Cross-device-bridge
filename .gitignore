@@ -16,6 +16,7 @@ local.properties
 # Node
 node_modules/
 dist/
+!android/app/src/main/assets/backend/dist/
 build/
 coverage/
 *.log

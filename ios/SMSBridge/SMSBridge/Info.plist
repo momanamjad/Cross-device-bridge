@@ -22,6 +22,8 @@
     <true/>
     <key>NSMicrophoneUsageDescription</key>
     <string>Required for voice calls - we need access to your microphone</string>
+    <key>NSCameraUsageDescription</key>
+    <string>Required to scan QR code from Realme phone for instant connection</string>
     <key>NSLocalNetworkUsageDescription</key>
     <string>Required to connect to Realme backend on local network</string>
     <key>NSBonjourServices</key>

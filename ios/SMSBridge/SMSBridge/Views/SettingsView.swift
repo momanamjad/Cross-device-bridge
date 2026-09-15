@@ -17,6 +17,7 @@ struct SettingsView: View {
     
     @State private var showingScanner = false
     @State private var scannedCode: String?
+    @State private var showingLogs = false
     
     var body: some View {
         Form {
@@ -116,6 +117,40 @@ struct SettingsView: View {
                 }
                 .foregroundColor(.red)
             }
+            
+            Section(header: Text("Diagnostics & Logs")) {
+                Button(action: {
+                    showingLogs = true
+                }) {
+                    HStack {
+                        Image(systemName: "doc.text.magnifyingglass")
+                            .foregroundColor(.blue)
+                        Text("View System Logs")
+                            .foregroundColor(.primary)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+                Button(action: {
+                    let logs = LogManager.shared.getLogsFormatted()
+                    UIPasteboard.general.string = logs.isEmpty ? "No logs recorded yet" : logs
+                    let impact = UINotificationFeedbackGenerator()
+                    impact.notificationOccurred(.success)
+                    alertMessage = "Logs copied to clipboard! (\(LogManager.shared.logEntries.count) lines)"
+                    showAlert = true
+                }) {
+                    HStack {
+                        Image(systemName: "doc.on.doc")
+                            .foregroundColor(.green)
+                        Text("Copy Logs to Clipboard")
+                            .foregroundColor(.green)
+                            .bold()
+                    }
+                }
+            }
         }
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
@@ -137,6 +172,9 @@ struct SettingsView: View {
         }
         .sheet(isPresented: $showingScanner) {
             QRCodeScannerView(scannedCode: $scannedCode)
+        }
+        .sheet(isPresented: $showingLogs) {
+            LogsViewerSheet()
         }
         .onChange(of: scannedCode) { newCode in
             if let code = newCode, let data = code.data(using: .utf8) {
@@ -341,3 +379,102 @@ struct SettingsView: View {
         showAlert = true
     }
 }
+
+struct LogsViewerSheet: View {
+    @Environment(\.presentationMode) var presentationMode
+    @ObservedObject private var logManager = LogManager.shared
+    @State private var copiedAlert = false
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 0) {
+                if logManager.logEntries.isEmpty {
+                    VStack(spacing: 12) {
+                        Spacer()
+                        Image(systemName: "doc.text")
+                            .font(.system(size: 48))
+                            .foregroundColor(.secondary)
+                        Text("No logs captured yet")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+                        Text("Logs will appear here when network, calls, or SMS events occur.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                        Spacer()
+                    }
+                } else {
+                    ScrollViewReader { proxy in
+                        ScrollView {
+                            LazyVStack(alignment: .leading, spacing: 4) {
+                                ForEach(Array(logManager.logEntries.enumerated()), id: \.offset) { index, entry in
+                                    Text(entry)
+                                        .font(.system(.caption2, design: .monospaced))
+                                        .foregroundColor(logColor(for: entry))
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .id(index)
+                                }
+                            }
+                            .padding(10)
+                        }
+                        .background(Color(UIColor.systemBackground))
+                    }
+                }
+            }
+            .navigationTitle("System Logs")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Clear") {
+                        logManager.clear()
+                    }
+                    .foregroundColor(.red)
+                    .disabled(logManager.logEntries.isEmpty)
+                }
+                
+                ToolbarItemGroup(placement: .navigationBarTrailing) {
+                    Button(action: copyLogs) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "doc.on.doc")
+                            Text("Copy")
+                        }
+                    }
+                    .disabled(logManager.logEntries.isEmpty)
+                    
+                    Button("Done") {
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                    .bold()
+                }
+            }
+            .alert(isPresented: $copiedAlert) {
+                Alert(title: Text("Copied"), message: Text("All logs copied to clipboard."), dismissButton: .default(Text("OK")))
+            }
+        }
+    }
+    
+    private func copyLogs() {
+        let logs = logManager.getLogsFormatted()
+        UIPasteboard.general.string = logs
+        let impact = UINotificationFeedbackGenerator()
+        impact.notificationOccurred(.success)
+        copiedAlert = true
+    }
+    
+    private func logColor(for entry: String) -> Color {
+        if entry.contains("[CALL]") {
+            return .green
+        } else if entry.contains("[WEBRTC]") {
+            return .blue
+        } else if entry.contains("[WS]") {
+            return .purple
+        } else if entry.contains("[SMS]") {
+            return .orange
+        } else if entry.contains("error") || entry.contains("Error") || entry.contains("failed") {
+            return .red
+        }
+        return .primary
+    }
+}
+

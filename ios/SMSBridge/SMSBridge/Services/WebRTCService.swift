@@ -135,28 +135,50 @@ class WebRTCService: NSObject {
 }
 
 extension WebRTCService: RTCPeerConnectionDelegate {
-    func peerConnection(_ peerConnection: RTCPeerConnection, didChange stateChanged: RTCSignalingState) {}
+    func peerConnection(_ peerConnection: RTCPeerConnection, didChange stateChanged: RTCSignalingState) {
+        AppLog("Signaling state: \(stateChanged.rawValue)", tag: "WEBRTC")
+    }
     
     func peerConnection(_ peerConnection: RTCPeerConnection, didAdd stream: RTCMediaStream) {
-        print("✅ Remote media stream received from Realme")
+        AppLog("Remote media stream received (audio tracks: \(stream.audioTracks.count), video tracks: \(stream.videoTracks.count))", tag: "WEBRTC")
         if let audioTrack = stream.audioTracks.first {
             audioTrack.isEnabled = true
-            print("✅ Remote audio track enabled and playing")
+            AppLog("Remote audio track enabled on iPhone", tag: "WEBRTC")
             onAudioTrackAdded?()
         }
         if let vTrack = stream.videoTracks.first {
-            print("✅ Remote video track received")
+            AppLog("Remote video track received", tag: "WEBRTC")
             self.videoTrack = vTrack
             onVideoTrackAdded?(vTrack)
         }
     }
     
-    func peerConnection(_ peerConnection: RTCPeerConnection, didRemove stream: RTCMediaStream) {}
+    func peerConnection(_ peerConnection: RTCPeerConnection, didRemove stream: RTCMediaStream) {
+        AppLog("Remote media stream removed", tag: "WEBRTC")
+    }
+    
     func peerConnectionShouldNegotiate(_ peerConnection: RTCPeerConnection) {}
-    func peerConnection(_ peerConnection: RTCPeerConnection, didChange connectionState: RTCIceConnectionState) {}
+    
+    func peerConnection(_ peerConnection: RTCPeerConnection, didChange connectionState: RTCIceConnectionState) {
+        let stateStr: String
+        switch connectionState {
+        case .new: stateStr = "new"
+        case .checking: stateStr = "checking"
+        case .connected: stateStr = "connected ✅"
+        case .completed: stateStr = "completed ✅"
+        case .failed: stateStr = "failed ❌"
+        case .disconnected: stateStr = "disconnected"
+        case .closed: stateStr = "closed"
+        case .count: stateStr = "count"
+        @unknown default: stateStr = "unknown"
+        }
+        AppLog("ICE Connection State: \(stateStr)", tag: "WEBRTC")
+    }
+    
     func peerConnection(_ peerConnection: RTCPeerConnection, didChange iceState: RTCIceGatheringState) {}
     
     func peerConnection(_ peerConnection: RTCPeerConnection, didGenerate candidate: RTCIceCandidate) {
+        AppLog("Generated local ICE candidate", tag: "WEBRTC")
         onLocalIceCandidate?(candidate)
     }
     

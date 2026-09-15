@@ -1,0 +1,39 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.createApp = createApp;
+const express_1 = __importDefault(require("express"));
+const cors_1 = __importDefault(require("cors"));
+const helmet_1 = __importDefault(require("helmet"));
+const pino_http_1 = __importDefault(require("pino-http"));
+const environment_1 = require("./config/environment");
+const logger_1 = require("./lib/logger");
+const errorHandler_1 = require("./middleware/errorHandler");
+const health_1 = require("./routes/health");
+const devices_1 = require("./routes/devices");
+const messages_1 = require("./routes/messages");
+const webrtcCalls_1 = require("./routes/webrtcCalls");
+const encryption_1 = require("./middleware/encryption");
+const files_1 = require("./routes/files");
+const path_1 = __importDefault(require("path"));
+function createApp() {
+    const app = (0, express_1.default)();
+    app.use((0, helmet_1.default)());
+    app.use((0, cors_1.default)({
+        origin: environment_1.env.nodeEnv === "development" ? true : environment_1.env.corsOrigin.split(",").map((s) => s.trim()),
+    }));
+    app.use(express_1.default.json({ limit: "256kb" }));
+    app.use((0, pino_http_1.default)({ logger: logger_1.logger }));
+    app.use("/api/health", health_1.healthRouter);
+    app.use("/api/devices", encryption_1.encryptRestResponse, devices_1.devicesRouter);
+    app.use("/api/messages", encryption_1.encryptRestResponse, messages_1.messagesRouter);
+    app.use("/api/calls", encryption_1.encryptRestResponse, webrtcCalls_1.webrtcCallsRouter);
+    app.use("/api/calls", encryption_1.encryptRestResponse, messages_1.callsRouter);
+    app.use("/api/files", encryption_1.encryptRestResponse, files_1.filesRouter);
+    app.use("/uploads", express_1.default.static(path_1.default.join(process.cwd(), "uploads")));
+    app.use(errorHandler_1.errorHandler);
+    return app;
+}
+//# sourceMappingURL=app.js.map
