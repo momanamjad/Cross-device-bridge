@@ -70,6 +70,13 @@ class NodeJsServerService : Service() {
     }
 
     private fun startNodeJsServer() {
+        synchronized(NodeJsServerService::class.java) {
+            if (isServerStarted) {
+                Log.i(TAG, "Node.js engine is already running in this process.")
+                return
+            }
+            isServerStarted = true
+        }
         nodeJsThread = Thread {
             try {
                 // Load C++ shared standard library, Node.js engine and native bridge libraries
@@ -217,5 +224,8 @@ class NodeJsServerService : Service() {
 
     companion object {
         private const val TAG = "NodeJsServerService"
+        @Volatile
+        var isServerStarted = false
+            private set
     }
 }
