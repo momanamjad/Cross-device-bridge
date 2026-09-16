@@ -4,7 +4,7 @@ import com.momanamjad.smsbridge.BridgeApp
 import com.momanamjad.smsbridge.data.CallRecord
 
 class WebRtcRepository {
-    private val db = BridgeApp.instance.database
+    private val db by lazy { BridgeApp.instance.database }
 
     suspend fun saveCallHistory(call: CallRecord) {
         db.callRecordDao().insert(call)

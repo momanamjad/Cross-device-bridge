@@ -285,8 +285,8 @@ class CallViewModel: ObservableObject {
             }
             
             do {
-                guard let wrapper = try? JSONSerialization.jsonObject(with: data) as? [String: String],
-                      let encryptedStr = wrapper["data"] else {
+                guard let wrapper = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                      let encryptedStr = wrapper["data"] as? String else {
                     print("❌ Invalid encrypted history response")
                     return
                 }

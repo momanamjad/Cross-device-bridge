@@ -37,6 +37,7 @@ async function createSms(req, res, next) {
             synced: message.synced,
         };
         (0, socketService_1.emitToDevice)(device.id, "message:new", payload);
+        (0, socketService_1.broadcastToAll)("message:new", payload);
         res.status(201).json({
             status: "success",
             message_id: message.id,
@@ -63,13 +64,15 @@ async function createCall(req, res, next) {
                 duration: body.duration ?? 0,
             },
         });
-        (0, socketService_1.emitToDevice)(device.id, "call:new", {
+        const callPayload = {
             id: call.id,
             caller: call.caller,
             state: call.callState,
             timestamp: call.timestamp.toISOString(),
             duration: call.duration,
-        });
+        };
+        (0, socketService_1.emitToDevice)(device.id, "call:new", callPayload);
+        (0, socketService_1.broadcastToAll)("call:new", callPayload);
         res.status(201).json({
             status: "success",
             call_id: call.id,

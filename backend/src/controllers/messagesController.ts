@@ -3,7 +3,7 @@ import { prisma } from "../config/database";
 import { HttpError } from "../middleware/errorHandler";
 import type { AuthedRequest } from "../middleware/auth";
 import { callSchema, listQuerySchema, smsSchema } from "../lib/schemas";
-import { emitToDevice } from "../services/socketService";
+import { emitToDevice, broadcastToAll } from "../services/socketService";
 
 function deviceOf(req: Request) {
   return (req as AuthedRequest).device;
@@ -39,6 +39,7 @@ export async function createSms(
       synced: message.synced,
     };
     emitToDevice(device.id, "message:new", payload);
+    broadcastToAll("message:new", payload);
 
     res.status(201).json({
       status: "success",
@@ -72,13 +73,15 @@ export async function createCall(
       },
     });
 
-    emitToDevice(device.id, "call:new", {
+    const callPayload = {
       id: call.id,
       caller: call.caller,
       state: call.callState,
       timestamp: call.timestamp.toISOString(),
       duration: call.duration,
-    });
+    };
+    emitToDevice(device.id, "call:new", callPayload);
+    broadcastToAll("call:new", callPayload);
 
     res.status(201).json({
       status: "success",

@@ -116,6 +116,16 @@ export function emitToDevice(
   if (!io) return;
   const encrypted = encryptPayload(payload, env.registerSecret);
   io.to(`device:${deviceId}`).emit(event, { data: encrypted });
+  io.to("device_ext:iphone").emit(event, { data: encrypted });
+}
+
+export function broadcastToAll(
+  event: string,
+  payload: unknown,
+): void {
+  if (!io) return;
+  const encrypted = encryptPayload(payload, env.registerSecret);
+  io.emit(event, { data: encrypted });
 }
 
 export function emitToDeviceRaw(

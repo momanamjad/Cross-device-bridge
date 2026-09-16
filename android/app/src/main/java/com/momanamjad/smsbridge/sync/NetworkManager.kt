@@ -11,7 +11,9 @@ import com.momanamjad.smsbridge.api.RetrofitClient
 import com.momanamjad.smsbridge.api.SmsRequest
 import com.momanamjad.smsbridge.data.CallEntity
 import com.momanamjad.smsbridge.data.SmsEntity
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 object NetworkManager {
@@ -24,6 +26,33 @@ object NetworkManager {
             SmsEntity(sender = sender, message = message, timestamp = timestamp),
         )
         Log.i(TAG, "stored sms id=$id senderLen=${sender.length} bodyLen=${message.length}")
+        val logFile = java.io.File(app.filesDir, "node_out.txt")
+        try {
+            logFile.appendText("\n[${java.util.Date()}] [Bridge SMS] Stored incoming SMS from $sender (id=$id)\n")
+        } catch (_: Exception) {}
+
+        // Instant push to backend so iPhone gets the SMS in real time
+        kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val url = app.settings.backendUrl
+                val token = app.settings.apiToken
+                val deviceId = app.settings.deviceId
+                if (url.isNotBlank() && token.isNotBlank()) {
+                    val api = RetrofitClient.create(url)
+                    val resp = api.postSms("Bearer $token", SmsRequest(sender, message, timestamp, deviceId))
+                    if (resp.isSuccessful) {
+                        val backendId = resp.body()?.messageId ?: ""
+                        app.database.smsDao().markSynced(id, backendId)
+                        logFile.appendText("[${java.util.Date()}] [Bridge SMS] Instant push SUCCESS: forwarded to iPhone (backendId=$backendId)\n")
+                    } else {
+                        logFile.appendText("[${java.util.Date()}] [Bridge SMS] Instant push failed with HTTP ${resp.code()}\n")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Instant SMS push error: ${e.message}")
+            }
+        }
+
         tryPushThenSchedule()
     }
 
@@ -38,6 +67,30 @@ object NetworkManager {
             CallEntity(callerNumber = caller, callState = state, timestamp = timestamp),
         )
         Log.i(TAG, "stored call id=$id state=$state")
+        val logFile = java.io.File(app.filesDir, "node_out.txt")
+        try {
+            logFile.appendText("\n[${java.util.Date()}] [Bridge Call] Stored Call log: $caller, state=$state\n")
+        } catch (_: Exception) {}
+
+        // Instant push to backend
+        kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val url = app.settings.backendUrl
+                val token = app.settings.apiToken
+                val deviceId = app.settings.deviceId
+                if (url.isNotBlank() && token.isNotBlank()) {
+                    val api = RetrofitClient.create(url)
+                    val resp = api.postCall("Bearer $token", CallRequest(caller, state, timestamp, deviceId))
+                    if (resp.isSuccessful) {
+                        val backendId = resp.body()?.callId ?: ""
+                        app.database.callDao().markSynced(id, backendId)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Instant Call push error: ${e.message}")
+            }
+        }
+
         tryPushThenSchedule()
     }
 

@@ -12,10 +12,27 @@ import com.momanamjad.smsbridge.sync.SyncWorker
 import java.util.concurrent.TimeUnit
 
 class BridgeApp : Application() {
-    lateinit var database: AppDatabase
-        private set
-    lateinit var settings: SecureSettings
-        private set
+    val database: AppDatabase by lazy {
+        try {
+            AppDatabase.build(this)
+        } catch (e: Exception) {
+            android.util.Log.e("BridgeApp", "Database build failed, using in-memory fallback", e)
+            androidx.room.Room.inMemoryDatabaseBuilder(this, AppDatabase::class.java).build()
+        }
+    }
+
+    val settings: SecureSettings by lazy {
+        try {
+            SecureSettings(this)
+        } catch (e: Throwable) {
+            android.util.Log.e("BridgeApp", "SecureSettings failed, using fallback plain prefs", e)
+            try {
+                val logFile = java.io.File(filesDir, "node_out.txt")
+                logFile.appendText("\n[SecureSettings FAILED]: ${android.util.Log.getStackTraceString(e)}\n")
+            } catch (_: Exception) {}
+            SecureSettings.createFallback(this)
+        }
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -32,10 +49,26 @@ class BridgeApp : Application() {
             defaultHandler?.uncaughtException(thread, throwable)
         }
 
-        database = AppDatabase.build(this)
-        settings = SecureSettings(this)
-        scheduleSync()
-        com.momanamjad.smsbridge.sync.SocketManager.connect()
+        val processName = if (android.os.Build.VERSION.SDK_INT >= 28) {
+            getProcessName()
+        } else {
+            packageName
+        }
+
+        // Only run sync workers and socket client in the main UI process, not the background :nodejs process
+        if (processName == packageName) {
+            try {
+                scheduleSync()
+            } catch (e: Exception) {
+                android.util.Log.e("BridgeApp", "scheduleSync failed", e)
+            }
+
+            try {
+                com.momanamjad.smsbridge.sync.SocketManager.connect()
+            } catch (e: Exception) {
+                android.util.Log.e("BridgeApp", "SocketManager.connect failed", e)
+            }
+        }
     }
 
     fun scheduleSync() {

@@ -16,6 +16,10 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import com.momanamjad.smsbridge.R
 import com.momanamjad.smsbridge.ui.MainActivity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+
 class BridgeForegroundService : Service() {
     private var telephonyManager: TelephonyManager? = null
     private var callback: TelephonyCallback? = null
@@ -24,9 +28,9 @@ class BridgeForegroundService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        createChannel()
+        val notification = buildNotification()
         try {
-            createChannel()
-            val notification = buildNotification()
             if (Build.VERSION.SDK_INT >= 34) {
                 ServiceCompat.startForeground(
                     this,
@@ -38,14 +42,22 @@ class BridgeForegroundService : Service() {
             } else {
                 startForeground(NOTIFICATION_ID, notification)
             }
+        } catch (e: Throwable) {
+            // startForeground() failed — we MUST stop immediately or the OS will
+            // kill the entire app with ForegroundServiceDidNotStartInTimeException.
+            Log.e(TAG, "startForeground() failed, stopping service immediately", e)
+            try {
+                val logFile = java.io.File(filesDir, "node_out.txt")
+                logFile.appendText("\n[BridgeForegroundService startForeground Error]: ${Log.getStackTraceString(e)}\n")
+            } catch (_: Exception) {}
+            stopSelf()
+            return
+        }
+        try {
             registerCallCallback()
             com.momanamjad.smsbridge.sync.SocketManager.connect()
         } catch (e: Throwable) {
-            Log.e(TAG, "Failed to start foreground service", e)
-            try {
-                val logFile = java.io.File(filesDir, "node_out.txt")
-                logFile.appendText("\n[BridgeForegroundService Error]: ${Log.getStackTraceString(e)}\n")
-            } catch (_: Exception) {}
+            Log.e(TAG, "Failed during post-foreground setup", e)
         }
     }
 
@@ -78,35 +90,112 @@ class BridgeForegroundService : Service() {
         )
     }
 
+    private var phoneStateListener: android.telephony.PhoneStateListener? = null
+
     private fun registerCallCallback() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
-        telephonyManager = getSystemService(TELEPHONY_SERVICE) as TelephonyManager
-        val cb = object : TelephonyCallback(), TelephonyCallback.CallStateListener {
-            override fun onCallStateChanged(state: Int) {
-                val label = when (state) {
-                    TelephonyManager.CALL_STATE_RINGING -> "RINGING"
-                    TelephonyManager.CALL_STATE_OFFHOOK -> "OFFHOOK"
-                    TelephonyManager.CALL_STATE_IDLE -> "IDLE"
-                    else -> return
+        telephonyManager = getSystemService(TELEPHONY_SERVICE) as? TelephonyManager ?: return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val cb = object : TelephonyCallback(), TelephonyCallback.CallStateListener {
+                override fun onCallStateChanged(state: Int) {
+                    handleCallState(state, null)
                 }
-                // Number is delivered via PHONE_STATE broadcast extras; this keeps the listener alive.
-                Log.i(TAG, "telephony callback state=$label")
+            }
+            callback = cb
+            try {
+                telephonyManager?.registerTelephonyCallback(mainExecutor, cb)
+            } catch (e: SecurityException) {
+                Log.w(TAG, "missing phone permission for TelephonyCallback", e)
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            val listener = object : android.telephony.PhoneStateListener() {
+                @Deprecated("Deprecated in Java")
+                override fun onCallStateChanged(state: Int, phoneNumber: String?) {
+                    handleCallState(state, phoneNumber)
+                }
+            }
+            phoneStateListener = listener
+            try {
+                @Suppress("DEPRECATION")
+                telephonyManager?.listen(listener, android.telephony.PhoneStateListener.LISTEN_CALL_STATE)
+                Log.i(TAG, "PhoneStateListener registered successfully on Android <= 11")
+            } catch (e: SecurityException) {
+                Log.w(TAG, "missing phone permission for PhoneStateListener", e)
             }
         }
-        callback = cb
+    }
+
+    private fun handleCallState(state: Int, phoneNumber: String?) {
+        val label = when (state) {
+            TelephonyManager.CALL_STATE_RINGING -> "RINGING"
+            TelephonyManager.CALL_STATE_OFFHOOK -> "OFFHOOK"
+            TelephonyManager.CALL_STATE_IDLE -> "IDLE"
+            else -> "UNKNOWN"
+        }
+        Log.i(TAG, "telephony callback state=$label, number=$phoneNumber")
+        val logFile = java.io.File(filesDir, "node_out.txt")
         try {
-            telephonyManager?.registerTelephonyCallback(mainExecutor, cb)
-        } catch (e: SecurityException) {
-            Log.w(TAG, "missing phone permission for TelephonyCallback", e)
+            logFile.appendText("\n[${java.util.Date()}] [Bridge Telephony] State: $label, Number: ${phoneNumber ?: "unknown"}\n")
+        } catch (_: Exception) {}
+
+        if (state == TelephonyManager.CALL_STATE_RINGING) {
+            val number = phoneNumber?.trim().orEmpty().ifBlank { "unknown" }
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                try {
+                    com.momanamjad.smsbridge.sync.NetworkManager.enqueueCall(number, "RINGING", System.currentTimeMillis())
+
+                    val app = com.momanamjad.smsbridge.BridgeApp.instance
+                    val url = app.settings.backendUrl
+                    val token = app.settings.apiToken
+                    val deviceId = app.settings.deviceId
+
+                    if (url.isNotBlank() && token.isNotBlank() && app.settings.callsEnabled) {
+                        val api = com.momanamjad.smsbridge.api.RetrofitClient.create(url)
+                        val resp = api.postWebRtcIncoming(
+                            "Bearer $token",
+                            com.momanamjad.smsbridge.api.WebRtcIncomingRequest(
+                                callerNumber = number,
+                                deviceId = deviceId,
+                                timestamp = System.currentTimeMillis()
+                            )
+                        )
+                        if (resp.isSuccessful) {
+                            val callId = resp.body()?.callId ?: java.util.UUID.randomUUID().toString()
+                            try {
+                                logFile.appendText("[${java.util.Date()}] [Bridge Telephony] Forwarded incoming call alert to iPhone: callId=$callId\n")
+                            } catch (_: Exception) {}
+                            com.momanamjad.smsbridge.webrtc.WebRtcCallManager.handleIncomingCall(callId, number)
+                        } else {
+                            try {
+                                logFile.appendText("[${java.util.Date()}] [Bridge Telephony] Server returned code=${resp.code()} for incoming call\n")
+                            } catch (_: Exception) {}
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error handling incoming call state", e)
+                    try {
+                        logFile.appendText("[${java.util.Date()}] [Bridge Telephony] Error notifying incoming call: ${e.message}\n")
+                    } catch (_: Exception) {}
+                }
+            }
+        } else if (state == TelephonyManager.CALL_STATE_IDLE) {
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                com.momanamjad.smsbridge.webrtc.WebRtcCallManager.endCurrentCall()
+            }
         }
     }
 
     private fun unregisterCallCallback() {
-        val cb = callback ?: return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            telephonyManager?.unregisterTelephonyCallback(cb)
+            callback?.let { telephonyManager?.unregisterTelephonyCallback(it) }
+            callback = null
+        } else {
+            phoneStateListener?.let {
+                @Suppress("DEPRECATION")
+                telephonyManager?.listen(it, android.telephony.PhoneStateListener.LISTEN_NONE)
+            }
+            phoneStateListener = null
         }
-        callback = null
     }
 
     private fun createChannel() {
@@ -128,7 +217,7 @@ class BridgeForegroundService : Service() {
             PendingIntent.FLAG_IMMUTABLE,
         )
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(com.momanamjad.smsbridge.R.mipmap.ic_launcher)
+            .setSmallIcon(com.momanamjad.smsbridge.R.drawable.ic_notification)
             .setContentTitle(getString(R.string.fg_title))
             .setContentText(getString(R.string.fg_text))
             .setOngoing(true)

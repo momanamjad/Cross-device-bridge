@@ -65,6 +65,7 @@
             android:name=".service.NodeJsServerService"
             android:enabled="true"
             android:exported="false"
+            android:process=":nodejs"
             android:foregroundServiceType="specialUse">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"

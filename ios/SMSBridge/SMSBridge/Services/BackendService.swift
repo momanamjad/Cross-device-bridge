@@ -25,8 +25,8 @@ class BackendService {
             throw NSError(domain: "BackendService", code: 401, userInfo: [NSLocalizedDescriptionKey: "Registration failed"])
         }
         
-        let jsonWrapper = try JSONSerialization.jsonObject(with: data) as? [String: String]
-        guard let encryptedStr = jsonWrapper?["data"] else {
+        let jsonWrapper = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        guard let encryptedStr = jsonWrapper?["data"] as? String else {
             throw NSError(domain: "BackendService", code: 500, userInfo: [NSLocalizedDescriptionKey: "Invalid encrypted registration response"])
         }
         
@@ -46,8 +46,8 @@ class BackendService {
         let (data, _) = try await URLSession.shared.data(for: request)
         
         // Response is wrapped in { data: "encrypted_string" }
-        guard let wrapper = try? JSONSerialization.jsonObject(with: data) as? [String: String],
-              let encryptedStr = wrapper["data"] else {
+        guard let wrapper = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let encryptedStr = wrapper["data"] as? String else {
             throw CryptoError.invalidPayloadFormat
         }
         
@@ -66,8 +66,8 @@ class BackendService {
         let (data, _) = try await URLSession.shared.data(for: request)
         
         // Response is wrapped in { data: "encrypted_string" }
-        guard let wrapper = try? JSONSerialization.jsonObject(with: data) as? [String: String],
-              let encryptedStr = wrapper["data"] else {
+        guard let wrapper = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let encryptedStr = wrapper["data"] as? String else {
             throw CryptoError.invalidPayloadFormat
         }
         

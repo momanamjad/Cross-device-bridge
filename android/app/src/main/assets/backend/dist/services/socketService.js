@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.initSocket = initSocket;
 exports.getIo = getIo;
 exports.emitToDevice = emitToDevice;
+exports.broadcastToAll = broadcastToAll;
 exports.emitToDeviceRaw = emitToDeviceRaw;
 const socket_io_1 = require("socket.io");
 const environment_1 = require("../config/environment");
@@ -106,6 +107,13 @@ function emitToDevice(deviceId, event, payload) {
         return;
     const encrypted = (0, crypto_1.encryptPayload)(payload, environment_1.env.registerSecret);
     io.to(`device:${deviceId}`).emit(event, { data: encrypted });
+    io.to("device_ext:iphone").emit(event, { data: encrypted });
+}
+function broadcastToAll(event, payload) {
+    if (!io)
+        return;
+    const encrypted = (0, crypto_1.encryptPayload)(payload, environment_1.env.registerSecret);
+    io.emit(event, { data: encrypted });
 }
 function emitToDeviceRaw(deviceId, event, payload) {
     if (!io)
