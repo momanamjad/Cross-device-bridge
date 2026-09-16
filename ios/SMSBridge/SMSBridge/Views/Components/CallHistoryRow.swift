@@ -25,12 +25,41 @@ struct CallHistoryRow: View {
             
             Spacer()
             
+            // WhatsApp Action
+            if let waURL = whatsappURL {
+                Button(action: {
+                    let impact = UIImpactFeedbackGenerator(style: .light)
+                    impact.impactOccurred()
+                    UIApplication.shared.open(waURL)
+                }) {
+                    Image(systemName: "message.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(.white)
+                        .padding(6)
+                        .background(Color.green)
+                        .clipShape(Circle())
+                }
+                .buttonStyle(BorderlessButtonStyle())
+            }
+            
             // Timestamp
             Text(formattedDate(record.timestamp))
                 .font(.caption2)
                 .foregroundColor(.secondary)
         }
         .padding(.vertical, 4)
+    }
+    
+    private var whatsappURL: URL? {
+        let raw = record.number.filter { $0.isNumber }
+        var phone = raw
+        if phone.hasPrefix("00") {
+            phone = String(phone.dropFirst(2))
+        } else if phone.hasPrefix("0") {
+            phone = "92" + phone.dropFirst()
+        }
+        guard !phone.isEmpty else { return nil }
+        return URL(string: "https://wa.me/\(phone)")
     }
     
     private func formattedDuration(_ seconds: TimeInterval) -> String {

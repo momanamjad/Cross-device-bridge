@@ -37,6 +37,36 @@ struct SettingsView: View {
                 }
             }
             
+            Section(header: Text("Quick Connect (Dual-Bridge)")) {
+                Button(action: {
+                    let impact = UIImpactFeedbackGenerator(style: .medium)
+                    impact.impactOccurred()
+                    serverIP = "192.168.43.1"
+                    serverPort = "9000"
+                    saveSettings()
+                    connect()
+                    alertMessage = "Preset applied! Connecting to Realme Hotspot (192.168.43.1:9000)"
+                    showAlert = true
+                }) {
+                    HStack {
+                        Image(systemName: "personalhotspot")
+                            .font(.title3)
+                            .foregroundColor(.orange)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Realme Hotspot Preset")
+                                .font(.body)
+                                .foregroundColor(.primary)
+                            Text("Sets Gateway to 192.168.43.1:9000")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                        Image(systemName: "bolt.fill")
+                            .foregroundColor(.orange)
+                    }
+                }
+            }
+            
             Section(header: Text("Server Settings")) {
                 HStack {
                     Text("IP Address")

@@ -17,6 +17,38 @@ struct DialerView: View {
                 .minimumScaleFactor(0.5)
                 .frame(height: 50)
             
+            // Dual-Bridge Info & WhatsApp quick action
+            VStack(spacing: 6) {
+                HStack(spacing: 6) {
+                    Image(systemName: "simcard.fill")
+                        .font(.caption2)
+                        .foregroundColor(.blue)
+                    Text("Dual-Bridge: Calls place on Realme SIM")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+                
+                if !phoneNumber.isEmpty, let waURL = whatsappURL {
+                    Button(action: {
+                        let impact = UIImpactFeedbackGenerator(style: .medium)
+                        impact.impactOccurred()
+                        UIApplication.shared.open(waURL)
+                    }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "message.fill")
+                            Text("Call / Chat on WhatsApp")
+                        }
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.green)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 6)
+                        .background(Color.green.opacity(0.12))
+                        .cornerRadius(12)
+                    }
+                }
+            }
+            
             Spacer()
             
             // Keypad Layout
@@ -60,5 +92,17 @@ struct DialerView: View {
             .padding(.bottom, 40)
         }
         .navigationTitle("Dialer")
+    }
+    
+    private var whatsappURL: URL? {
+        let raw = phoneNumber.filter { $0.isNumber }
+        var phone = raw
+        if phone.hasPrefix("00") {
+            phone = String(phone.dropFirst(2))
+        } else if phone.hasPrefix("0") {
+            phone = "92" + phone.dropFirst()
+        }
+        guard !phone.isEmpty else { return nil }
+        return URL(string: "https://wa.me/\(phone)")
     }
 }
