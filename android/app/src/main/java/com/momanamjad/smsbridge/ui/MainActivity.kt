@@ -52,7 +52,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.grantPermissions.setOnClickListener { requestNeededPermissions() }
-        binding.startBridge.setOnClickListener { startBridge() }
+        binding.startBridge.setOnClickListener {
+            val missing = neededPermissions().filter { !hasPermission(it) }
+            if (missing.isNotEmpty()) {
+                requestNeededPermissions()
+            }
+            startBridge()
+        }
         binding.openSettings.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
@@ -60,6 +66,10 @@ class MainActivity : AppCompatActivity() {
             showLogsDialog()
         }
         refreshStatus()
+        val missingAtStart = neededPermissions().filter { !hasPermission(it) }
+        if (missingAtStart.isNotEmpty()) {
+            requestNeededPermissions()
+        }
         ensureRegisteredAndConnected()
         val initialIp = getDeviceWifiIp()
         if (initialIp != "127.0.0.1") {
@@ -92,7 +102,7 @@ class MainActivity : AppCompatActivity() {
         binding.status.text = if (missing.isEmpty()) {
             "All permissions granted. Tap Start Bridge."
         } else {
-            getString(R.string.permissions_needed)
+            "Required: " + missing.joinToString(", ") { it.substringAfterLast('.') } + " (Tap Grant Permissions)"
         }
     }
 

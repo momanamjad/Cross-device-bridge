@@ -369,8 +369,8 @@ export class WebRTCSignalServer {
         androidSocket.emit(event, data);
       } else {
         targetDevice = "realme_c3_1"; // fallback
+        io.to(`device_ext:${targetDevice}`).emit(event, data);
       }
-      io.to(`device_ext:${targetDevice}`).emit(event, data);
     } else {
       targetDevice = "iphone";
       const encrypted = encryptPayload(data, env.registerSecret);

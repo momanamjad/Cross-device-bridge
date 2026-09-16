@@ -18,9 +18,9 @@ object WebRtcCallManager {
     private const val TAG = "WebRtcCallManager"
     
     private val context: Context get() = BridgeApp.instance
-    private val repository = WebRtcRepository()
+    private val repository by lazy { WebRtcRepository() }
     
-    val audioManager = AudioManager(context)
+    val audioManager by lazy { AudioManager(context) }
     var webRtcClient: WebRtcClient? = null
         private set
 
@@ -86,35 +86,21 @@ object WebRtcCallManager {
     }
 
     suspend fun makeOutgoingCall(callId: String, phoneNumber: String) {
-        Log.i(TAG, "WebRtcCallManager: makeOutgoingCall callId=$callId, phoneNumber=$phoneNumber")
+        val logFile = java.io.File(context.filesDir, "node_out.txt")
+        val cleanNumber = phoneNumber.replace(" ", "").replace("-", "").trim()
+        Log.i(TAG, "WebRtcCallManager: makeOutgoingCall callId=$callId, phoneNumber=$cleanNumber")
+        try {
+            logFile.appendText("\n[${java.util.Date()}] [Bridge Dialer] Received makeOutgoingCall: callId=$callId to $cleanNumber\n")
+        } catch (_: Exception) {}
+
         currentCallId = callId
-        callerOrPhoneNum = phoneNumber
+        callerOrPhoneNum = cleanNumber
         isIncomingCall = false
         startTimeMillis = System.currentTimeMillis()
-        updateState(CallState.RingingOutgoing(phoneNumber))
-        Log.i(TAG, "Bridge: Headless outgoing call forwarding active for $phoneNumber")
+        updateState(CallState.RingingOutgoing(cleanNumber))
 
-        // Request CALL_PHONE permission to dial on Realme SIM if available
-        if (context.checkSelfPermission(android.Manifest.permission.CALL_PHONE) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
-            try {
-                val telecomManager = context.getSystemService(Context.TELECOM_SERVICE) as android.telecom.TelecomManager
-                telecomManager.placeCall(android.net.Uri.parse("tel:$phoneNumber"), null)
-                Log.i(TAG, "Placed call using TelecomManager")
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to place call with TelecomManager, falling back to Intent", e)
-                try {
-                    val callIntent = Intent(Intent.ACTION_CALL).apply {
-                        data = android.net.Uri.parse("tel:$phoneNumber")
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                    context.startActivity(callIntent)
-                } catch (e2: Exception) {
-                    Log.e(TAG, "Failed to dial SIM number with Intent", e2)
-                }
-            }
-        } else {
-            Log.w(TAG, "CALL_PHONE permission is missing. Continuing WebRTC handshake only.")
-        }
+        // Trigger cellular SIM dial
+        dialCellularCall(cleanNumber)
 
         // Initialize WebRTC
         val client = WebRtcClient(context, SocketManager, callId)
@@ -128,12 +114,90 @@ object WebRtcCallManager {
                     "call_id" to callId,
                     "sdp_offer" to offer
                 ))
+                try {
+                    logFile.appendText("[${java.util.Date()}] [WebRTC] Generated offer for callId=$callId\n")
+                } catch (_: Exception) {}
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to create offer", e)
+                try {
+                    logFile.appendText("[${java.util.Date()}] [WebRTC] Failed to create offer: ${e.message}\n")
+                } catch (_: Exception) {}
                 updateState(CallState.Failed(callId, "SDP Offer failed"))
             }
         } else {
+            try {
+                logFile.appendText("[${java.util.Date()}] [WebRTC] Client initialization failed\n")
+            } catch (_: Exception) {}
             updateState(CallState.Failed(callId, "WebRTC init failed"))
+        }
+    }
+
+    private fun dialCellularCall(cleanNumber: String) {
+        val logFile = java.io.File(context.filesDir, "node_out.txt")
+        val hasCallPhone = context.checkSelfPermission(android.Manifest.permission.CALL_PHONE) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        try {
+            logFile.appendText("[${java.util.Date()}] [Bridge Dialer] CALL_PHONE permission: $hasCallPhone\n")
+        } catch (_: Exception) {}
+
+        if (!hasCallPhone) {
+            try {
+                logFile.appendText("[${java.util.Date()}] [Bridge Dialer] ERROR: CALL_PHONE permission is NOT GRANTED on Android! Open app and tap 'Grant permissions'.\n")
+            } catch (_: Exception) {}
+            return
+        }
+
+        val uri = android.net.Uri.fromParts("tel", cleanNumber, null)
+        var placed = false
+
+        // Method 1: TelecomManager with explicit PhoneAccountHandle (bypasses dual-SIM picker on Realme)
+        try {
+            val telecomManager = context.getSystemService(Context.TELECOM_SERVICE) as? android.telecom.TelecomManager
+            if (telecomManager != null) {
+                val extras = android.os.Bundle().apply {
+                    putBoolean(android.telecom.TelecomManager.EXTRA_START_CALL_WITH_SPEAKERPHONE, false)
+                }
+                if (context.checkSelfPermission(android.Manifest.permission.READ_PHONE_STATE) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    val accounts = telecomManager.callCapablePhoneAccounts
+                    if (!accounts.isNullOrEmpty()) {
+                        extras.putParcelable(android.telecom.TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, accounts[0])
+                        try {
+                            logFile.appendText("[${java.util.Date()}] [Bridge Dialer] Bound to SIM account: ${accounts[0].id}\n")
+                        } catch (_: Exception) {}
+                    }
+                }
+                telecomManager.placeCall(uri, extras)
+                placed = true
+                Log.i(TAG, "Placed cellular call using TelecomManager")
+                try {
+                    logFile.appendText("[${java.util.Date()}] [Bridge Dialer] SUCCESS: TelecomManager.placeCall dispatched to cellular network for $cleanNumber\n")
+                } catch (_: Exception) {}
+            }
+        } catch (e: Throwable) {
+            Log.w(TAG, "TelecomManager.placeCall failed, trying Intent.ACTION_CALL", e)
+            try {
+                logFile.appendText("[${java.util.Date()}] [Bridge Dialer] TelecomManager.placeCall threw: ${e.message}\n")
+            } catch (_: Exception) {}
+        }
+
+        // Method 2: Intent.ACTION_CALL with NEW_TASK
+        if (!placed) {
+            try {
+                val callIntent = Intent(Intent.ACTION_CALL).apply {
+                    data = uri
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                }
+                context.startActivity(callIntent)
+                placed = true
+                Log.i(TAG, "Placed cellular call using Intent.ACTION_CALL")
+                try {
+                    logFile.appendText("[${java.util.Date()}] [Bridge Dialer] SUCCESS: Intent.ACTION_CALL dispatched for $cleanNumber\n")
+                } catch (_: Exception) {}
+            } catch (e2: Throwable) {
+                Log.e(TAG, "Failed to dial SIM with Intent.ACTION_CALL", e2)
+                try {
+                    logFile.appendText("[${java.util.Date()}] [Bridge Dialer] Intent.ACTION_CALL failed: ${e2.message}\n")
+                } catch (_: Exception) {}
+            }
         }
     }
 
