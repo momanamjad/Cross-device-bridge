@@ -114,9 +114,10 @@ class NodeJsServerService : Service() {
                     targetDir.mkdirs()
                 }
                 val nodeModulesDir = File(targetDir, "node_modules")
-                if (!nodeModulesDir.exists() || nodeModulesDir.list().isNullOrEmpty()) {
-                    logFile.appendText("[${java.util.Date()}] Extracting full backend assets...\n")
-                    Log.d(TAG, "Initial extraction of full backend assets (including node_modules)...")
+                val multerCheck = File(nodeModulesDir, "multer")
+                if (!nodeModulesDir.exists() || nodeModulesDir.list().isNullOrEmpty() || !multerCheck.exists()) {
+                    logFile.appendText("[${java.util.Date()}] Extracting full backend assets (including node_modules)...\n")
+                    Log.d(TAG, "Extraction of full backend assets (including node_modules)...")
                     copyAssetFolder(assets, "backend", targetDir.absolutePath)
                 } else {
                     logFile.appendText("[${java.util.Date()}] Updating dist folder...\n")
