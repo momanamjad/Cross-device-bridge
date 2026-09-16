@@ -92,15 +92,10 @@ export async function createCall(
   }
 }
 
-async function getTargetDeviceId(req: Request): Promise<string> {
+async function getTargetDeviceId(req: Request): Promise<string | undefined> {
   const device = deviceOf(req);
   if (device.deviceType === "ios") {
-    const androidDevice = await prisma.device.findFirst({
-      where: { deviceType: "android", isActive: true },
-    });
-    if (androidDevice) {
-      return androidDevice.id;
-    }
+    return undefined;
   }
   return device.id;
 }
@@ -114,7 +109,7 @@ export async function listMessages(
     const query = listQuerySchema.parse(req.query);
     const targetDeviceId = await getTargetDeviceId(req);
     const where = {
-      deviceId: targetDeviceId,
+      ...(targetDeviceId ? { deviceId: targetDeviceId } : {}),
       ...(query.synced === undefined ? {} : { synced: query.synced }),
     };
 
@@ -156,7 +151,7 @@ export async function listCalls(
     const query = listQuerySchema.parse(req.query);
     const targetDeviceId = await getTargetDeviceId(req);
     const where = {
-      deviceId: targetDeviceId,
+      ...(targetDeviceId ? { deviceId: targetDeviceId } : {}),
       ...(query.synced === undefined ? {} : { synced: query.synced }),
     };
 

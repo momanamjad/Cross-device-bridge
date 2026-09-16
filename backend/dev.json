@@ -1,7 +1,91 @@
 {
-  "devices": [],
-  "messages": [],
+  "devices": [
+    {
+      "id": "k5snu4wmu4112xe",
+      "externalId": "realme_c3_1",
+      "deviceName": "Realme C21-Y Test",
+      "deviceType": "android",
+      "osVersion": "11",
+      "tokenHash": "4ebb5110ed3ef72db97cdd41d4f70c413c90f13e8abfc28dbb2b6ea5868831ab",
+      "isActive": true,
+      "createdAt": "2026-09-16T11:37:54.962Z",
+      "updatedAt": "2026-09-16T11:40:02.571Z",
+      "lastSeen": "2026-09-16T11:40:02.569Z"
+    },
+    {
+      "id": "78m8c7fmu41130n",
+      "externalId": "iphone",
+      "deviceName": "iPhone Client",
+      "deviceType": "ios",
+      "osVersion": "iOS 17.5",
+      "tokenHash": "dc338bce4b98f6a903071c8938f7b2f8d02910455343c3e673ab02f6fe13b6a8",
+      "isActive": true,
+      "createdAt": "2026-09-16T11:37:55.079Z",
+      "updatedAt": "2026-09-16T11:40:05.625Z",
+      "lastSeen": "2026-09-16T11:40:05.623Z"
+    }
+  ],
+  "messages": [
+    {
+      "id": "26fddnamu4113ej",
+      "deviceId": "k5snu4wmu4112xe",
+      "sender": "+923001234567",
+      "content": "Test SMS Verification Code: 4892",
+      "timestamp": "2026-09-16T11:37:55.568Z",
+      "synced": false,
+      "createdAt": "2026-09-16T11:37:55.579Z"
+    },
+    {
+      "id": "brbps4tmu411qmw",
+      "deviceId": "k5snu4wmu4112xe",
+      "sender": "+923001234567",
+      "content": "Test SMS Verification Code: 4892",
+      "timestamp": "2026-09-16T11:38:25.675Z",
+      "synced": false,
+      "createdAt": "2026-09-16T11:38:25.688Z"
+    },
+    {
+      "id": "to33c6mmu413rly",
+      "deviceId": "k5snu4wmu4112xe",
+      "sender": "+923001234567",
+      "content": "Test SMS Verification Code: 4892",
+      "timestamp": "2026-09-16T11:40:00.244Z",
+      "synced": false,
+      "createdAt": "2026-09-16T11:40:00.262Z"
+    }
+  ],
   "callNotifications": [],
-  "calls": [],
+  "calls": [
+    {
+      "id": "15a780c0-93b7-436a-8aae-824ed499b4cc",
+      "initiator_device": "realme_c3_1",
+      "initiator_number": null,
+      "receiver_number": "03414978300",
+      "state": "RINGING",
+      "is_incoming": true,
+      "started_at": "2026-09-16T11:40:02.578Z",
+      "ended_at": null,
+      "duration_seconds": 0,
+      "call_sid": null,
+      "connected_successfully": false,
+      "created_at": "2026-09-16T11:40:02.581Z",
+      "updated_at": "2026-09-16T11:40:02.581Z"
+    },
+    {
+      "id": "test-call-1789558803572",
+      "initiator_device": "iphone",
+      "initiator_number": null,
+      "receiver_number": "03009876543",
+      "state": "ENDED",
+      "is_incoming": false,
+      "started_at": "2026-09-16T11:40:04.100Z",
+      "ended_at": "2026-09-16T11:40:04.797Z",
+      "duration_seconds": 1,
+      "call_sid": null,
+      "connected_successfully": false,
+      "created_at": "2026-09-16T11:40:04.106Z",
+      "updated_at": "2026-09-16T11:40:04.799Z"
+    }
+  ],
   "iceCandidates": []
 }

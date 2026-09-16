@@ -1,0 +1,16 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.callsRouter = exports.messagesRouter = void 0;
+const express_1 = require("express");
+const auth_1 = require("../middleware/auth");
+const messagesController_1 = require("../controllers/messagesController");
+exports.messagesRouter = (0, express_1.Router)();
+exports.messagesRouter.use(auth_1.requireDeviceAuth);
+exports.messagesRouter.post("/sms", messagesController_1.createSms);
+exports.messagesRouter.post("/call", messagesController_1.createCall);
+exports.messagesRouter.get("/", messagesController_1.listMessages);
+exports.messagesRouter.post("/:id/confirm", messagesController_1.confirmMessage);
+exports.callsRouter = (0, express_1.Router)();
+exports.callsRouter.use(auth_1.requireDeviceAuth);
+exports.callsRouter.get("/", messagesController_1.listCalls);
+exports.callsRouter.post("/:id/confirm", messagesController_1.confirmCall);
