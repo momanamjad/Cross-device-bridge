@@ -24,7 +24,17 @@ process.on("unhandledRejection", (reason) => {
   writeLog(`[FATAL] Unhandled Rejection in Node.js: ${reason}`);
 });
 
+import path from "path";
+
 writeLog(">>> [server.ts]: Node.js early execution started <<<");
+
+try {
+  const backendBaseDir = path.resolve(__dirname, "..");
+  process.chdir(backendBaseDir);
+  writeLog(`>>> [server.ts]: Working directory switched to ${process.cwd()} <<<`);
+} catch (e: any) {
+  writeLog(`>>> [server.ts]: Failed to change working directory: ${e?.message} <<<`);
+}
 
 import { createServer } from "http";
 import { env } from "./config/environment";

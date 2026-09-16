@@ -16,7 +16,6 @@ const devices_1 = require("./routes/devices");
 const messages_1 = require("./routes/messages");
 const webrtcCalls_1 = require("./routes/webrtcCalls");
 const encryption_1 = require("./middleware/encryption");
-const files_1 = require("./routes/files");
 const path_1 = __importDefault(require("path"));
 function createApp() {
     const app = (0, express_1.default)();
@@ -31,8 +30,14 @@ function createApp() {
     app.use("/api/messages", encryption_1.encryptRestResponse, messages_1.messagesRouter);
     app.use("/api/calls", encryption_1.encryptRestResponse, webrtcCalls_1.webrtcCallsRouter);
     app.use("/api/calls", encryption_1.encryptRestResponse, messages_1.callsRouter);
-    app.use("/api/files", encryption_1.encryptRestResponse, files_1.filesRouter);
-    app.use("/uploads", express_1.default.static(path_1.default.join(process.cwd(), "uploads")));
+    const uploadDir = process.env.STORAGE_DIR ? path_1.default.join(process.env.STORAGE_DIR, "uploads") : path_1.default.join(process.cwd(), "uploads");
+    try {
+        if (!path_1.default.isAbsolute(uploadDir) || !require("fs").existsSync(uploadDir)) {
+            require("fs").mkdirSync(uploadDir, { recursive: true });
+        }
+    }
+    catch (_) { }
+    app.use("/uploads", express_1.default.static(uploadDir));
     app.use(errorHandler_1.errorHandler);
     return app;
 }

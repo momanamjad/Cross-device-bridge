@@ -12,13 +12,30 @@ const socketService_1 = require("../services/socketService");
 const database_1 = require("../config/database");
 const filesRouter = (0, express_1.Router)();
 exports.filesRouter = filesRouter;
-// Create uploads directory if it doesn't exist
-const uploadDir = (0, path_1.join)(process.cwd(), "uploads");
-if (!(0, fs_1.existsSync)(uploadDir)) {
-    (0, fs_1.mkdirSync)(uploadDir, { recursive: true });
+// Resolve uploads directory safely inside app storage
+const getUploadDir = () => {
+    if (process.env.STORAGE_DIR) {
+        return (0, path_1.join)(process.env.STORAGE_DIR, "uploads");
+    }
+    return (0, path_1.join)(process.cwd(), "uploads");
+};
+const uploadDir = getUploadDir();
+try {
+    if (!(0, fs_1.existsSync)(uploadDir)) {
+        (0, fs_1.mkdirSync)(uploadDir, { recursive: true });
+    }
+}
+catch (err) {
+    console.warn(`[WARN] Could not create uploads directory at ${uploadDir}: ${err?.message}`);
 }
 const storage = multer_1.default.diskStorage({
     destination: (req, file, cb) => {
+        try {
+            if (!(0, fs_1.existsSync)(uploadDir)) {
+                (0, fs_1.mkdirSync)(uploadDir, { recursive: true });
+            }
+        }
+        catch (_) { }
         cb(null, uploadDir);
     },
     filename: (req, file, cb) => {

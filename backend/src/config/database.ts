@@ -145,10 +145,14 @@ if (env.databaseUrl) {
   dbPath = cleanUrl.replace(/\.db$/, ".json");
 }
 
-// Ensure the directory exists
-const dbDir = path.dirname(dbPath);
-if (!fs.existsSync(dbDir)) {
-  fs.mkdirSync(dbDir, { recursive: true });
+// Ensure the directory exists safely
+try {
+  const dbDir = path.dirname(dbPath);
+  if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
+  }
+} catch (e: any) {
+  console.warn(`[WARN] Could not create db directory: ${e?.message}`);
 }
 
 // Helper to read and write database

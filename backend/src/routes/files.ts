@@ -7,14 +7,30 @@ import { prisma } from "../config/database";
 
 const filesRouter = Router();
 
-// Create uploads directory if it doesn't exist
-const uploadDir = join(process.cwd(), "uploads");
-if (!existsSync(uploadDir)) {
-  mkdirSync(uploadDir, { recursive: true });
+// Resolve uploads directory safely inside app storage
+const getUploadDir = (): string => {
+  if (process.env.STORAGE_DIR) {
+    return join(process.env.STORAGE_DIR, "uploads");
+  }
+  return join(process.cwd(), "uploads");
+};
+
+const uploadDir = getUploadDir();
+try {
+  if (!existsSync(uploadDir)) {
+    mkdirSync(uploadDir, { recursive: true });
+  }
+} catch (err: any) {
+  console.warn(`[WARN] Could not create uploads directory at ${uploadDir}: ${err?.message}`);
 }
 
 const storage = multer.diskStorage({
   destination: (req: Request, file: Express.Multer.File, cb: (error: Error | null, destination: string) => void) => {
+    try {
+      if (!existsSync(uploadDir)) {
+        mkdirSync(uploadDir, { recursive: true });
+      }
+    } catch (_) {}
     cb(null, uploadDir);
   },
   filename: (req: Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) => {

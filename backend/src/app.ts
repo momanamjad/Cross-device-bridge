@@ -29,8 +29,13 @@ export function createApp() {
   app.use("/api/messages", encryptRestResponse, messagesRouter);
   app.use("/api/calls", encryptRestResponse, webrtcCallsRouter);
   app.use("/api/calls", encryptRestResponse, callsRouter);
-  app.use("/api/files", encryptRestResponse, filesRouter);
-  app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+  const uploadDir = process.env.STORAGE_DIR ? path.join(process.env.STORAGE_DIR, "uploads") : path.join(process.cwd(), "uploads");
+  try {
+    if (!path.isAbsolute(uploadDir) || !require("fs").existsSync(uploadDir)) {
+      require("fs").mkdirSync(uploadDir, { recursive: true });
+    }
+  } catch (_) {}
+  app.use("/uploads", express.static(uploadDir));
 
   app.use(errorHandler);
   return app;

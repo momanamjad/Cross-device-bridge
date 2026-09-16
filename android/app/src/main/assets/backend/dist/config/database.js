@@ -15,10 +15,15 @@ if (environment_1.env.databaseUrl) {
     // Replace extension .db with .json
     dbPath = cleanUrl.replace(/\.db$/, ".json");
 }
-// Ensure the directory exists
-const dbDir = path_1.default.dirname(dbPath);
-if (!fs_1.default.existsSync(dbDir)) {
-    fs_1.default.mkdirSync(dbDir, { recursive: true });
+// Ensure the directory exists safely
+try {
+    const dbDir = path_1.default.dirname(dbPath);
+    if (!fs_1.default.existsSync(dbDir)) {
+        fs_1.default.mkdirSync(dbDir, { recursive: true });
+    }
+}
+catch (e) {
+    console.warn(`[WARN] Could not create db directory: ${e?.message}`);
 }
 // Helper to read and write database
 function readDb() {
