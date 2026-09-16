@@ -31,6 +31,10 @@ class MainActivity : AppCompatActivity() {
     private val handler = Handler(Looper.getMainLooper())
     private var bridgeStarted = false
 
+    private val notificationPermLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { _ -> startNodeJsService() }
+
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),
     ) { refreshStatus() }
@@ -40,8 +44,12 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val nodeJsIntent = Intent(this, com.momanamjad.smsbridge.service.NodeJsServerService::class.java)
-        ContextCompat.startForegroundService(this, nodeJsIntent)
+        // On Android 13+ we must get POST_NOTIFICATIONS before starting foreground services.
+        if (Build.VERSION.SDK_INT >= 33 && !hasPermission(android.Manifest.permission.POST_NOTIFICATIONS)) {
+            notificationPermLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            startNodeJsService()
+        }
 
         binding.grantPermissions.setOnClickListener { requestNeededPermissions() }
         binding.startBridge.setOnClickListener { startBridge() }
@@ -56,6 +64,15 @@ class MainActivity : AppCompatActivity() {
         val initialIp = getDeviceWifiIp()
         if (initialIp != "127.0.0.1") {
             generateQRCode(initialIp, "")
+        }
+    }
+
+    private fun startNodeJsService() {
+        try {
+            val nodeJsIntent = Intent(this, com.momanamjad.smsbridge.service.NodeJsServerService::class.java)
+            ContextCompat.startForegroundService(this, nodeJsIntent)
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Failed to start NodeJsServerService", e)
         }
     }
 
@@ -150,7 +167,18 @@ class MainActivity : AppCompatActivity() {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val response = URL("$baseUrl/api/health").readText()
+                val urlToTry = if (baseUrl.contains("localhost")) baseUrl.replace("localhost", "127.0.0.1") else baseUrl
+                val response = try {
+                    val conn = URL("$urlToTry/api/health").openConnection() as java.net.HttpURLConnection
+                    conn.connectTimeout = 2500
+                    conn.readTimeout = 2500
+                    conn.inputStream.bufferedReader().readText()
+                } catch (_: Exception) {
+                    val conn = URL("$baseUrl/api/health").openConnection() as java.net.HttpURLConnection
+                    conn.connectTimeout = 2500
+                    conn.readTimeout = 2500
+                    conn.inputStream.bufferedReader().readText()
+                }
                 val json = JSONObject(response)
                 val status = json.optString("status", "unknown")
                 val uptime = json.optInt("uptime", 0)
@@ -288,24 +316,29 @@ class MainActivity : AppCompatActivity() {
             }
         }.toString()
 
-        try {
-            val writer = QRCodeWriter()
-            val bitMatrix = writer.encode(qrData, BarcodeFormat.QR_CODE, 512, 512)
-            val width = bitMatrix.width
-            val height = bitMatrix.height
-            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
-            for (x in 0 until width) {
+        CoroutineScope(Dispatchers.Default).launch {
+            try {
+                val writer = QRCodeWriter()
+                val bitMatrix = writer.encode(qrData, BarcodeFormat.QR_CODE, 512, 512)
+                val width = bitMatrix.width
+                val height = bitMatrix.height
+                val pixels = IntArray(width * height)
                 for (y in 0 until height) {
-                    bitmap.setPixel(x, y, if (bitMatrix.get(x, y)) Color.BLACK else Color.WHITE)
+                    val offset = y * width
+                    for (x in 0 until width) {
+                        pixels[offset + x] = if (bitMatrix.get(x, y)) Color.BLACK else Color.WHITE
+                    }
                 }
+                val bitmap = Bitmap.createBitmap(pixels, width, height, Bitmap.Config.RGB_565)
+                withContext(Dispatchers.Main) {
+                    binding.qrImage.setImageBitmap(bitmap)
+                    binding.qrCard.alpha = 0f
+                    binding.qrCard.visibility = View.VISIBLE
+                    binding.qrCard.animate().alpha(1f).setDuration(400).start()
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("MainActivity", "Failed to generate QR code", e)
             }
-            binding.qrImage.setImageBitmap(bitmap)
-            
-            binding.qrCard.alpha = 0f
-            binding.qrCard.visibility = View.VISIBLE
-            binding.qrCard.animate().alpha(1f).setDuration(400).start()
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
     }
 

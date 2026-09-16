@@ -38,6 +38,8 @@ if (process.env.LOG_FILE_PATH) {
     writeLog(`[FATAL] Unhandled Rejection: ${reason}`);
     logger.error({ reason }, "Unhandled Rejection in Node.js");
   });
+
+  writeLog(`>>> Node.js runtime active. Port=${env.port}, DB=${env.databaseUrl} <<<`);
 }
 
 import localtunnel from "localtunnel";
@@ -72,13 +74,23 @@ async function main() {
   const httpServer = createServer(app);
   initSocket(httpServer);
 
-  httpServer.listen(env.port, "0.0.0.0", () => {
+  httpServer.listen(env.port, () => {
     logger.info({ port: env.port }, "device-bridge api listening");
+    if (process.env.LOG_FILE_PATH) {
+      try {
+        fs.appendFileSync(process.env.LOG_FILE_PATH, `[${new Date().toISOString()}] >>> device-bridge api listening on port ${env.port} <<<\n`, "utf8");
+      } catch (_) {}
+    }
     setupTunnel(env.port);
   });
 }
 
 main().catch(async (err) => {
   logger.error({ err }, "failed to start");
+  if (process.env.LOG_FILE_PATH) {
+    try {
+      fs.appendFileSync(process.env.LOG_FILE_PATH, `[${new Date().toISOString()}] [FATAL ERROR]: ${err?.stack || err}\n`, "utf8");
+    } catch (_) {}
+  }
   await prisma.$disconnect();
 });

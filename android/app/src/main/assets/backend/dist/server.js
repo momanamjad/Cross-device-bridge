@@ -40,6 +40,7 @@ if (process.env.LOG_FILE_PATH) {
         writeLog(`[FATAL] Unhandled Rejection: ${reason}`);
         logger_1.logger.error({ reason }, "Unhandled Rejection in Node.js");
     });
+    writeLog(`>>> Node.js runtime active. Port=${environment_1.env.port}, DB=${environment_1.env.databaseUrl} <<<`);
 }
 const localtunnel_1 = __importDefault(require("localtunnel"));
 exports.currentTunnelUrl = null;
@@ -68,13 +69,25 @@ async function main() {
     const app = (0, app_1.createApp)();
     const httpServer = (0, http_1.createServer)(app);
     (0, socketService_1.initSocket)(httpServer);
-    httpServer.listen(environment_1.env.port, "0.0.0.0", () => {
+    httpServer.listen(environment_1.env.port, () => {
         logger_1.logger.info({ port: environment_1.env.port }, "device-bridge api listening");
+        if (process.env.LOG_FILE_PATH) {
+            try {
+                fs_1.default.appendFileSync(process.env.LOG_FILE_PATH, `[${new Date().toISOString()}] >>> device-bridge api listening on port ${environment_1.env.port} <<<\n`, "utf8");
+            }
+            catch (_) { }
+        }
         setupTunnel(environment_1.env.port);
     });
 }
 main().catch(async (err) => {
     logger_1.logger.error({ err }, "failed to start");
+    if (process.env.LOG_FILE_PATH) {
+        try {
+            fs_1.default.appendFileSync(process.env.LOG_FILE_PATH, `[${new Date().toISOString()}] [FATAL ERROR]: ${err?.stack || err}\n`, "utf8");
+        }
+        catch (_) { }
+    }
     await database_1.prisma.$disconnect();
 });
 //# sourceMappingURL=server.js.map

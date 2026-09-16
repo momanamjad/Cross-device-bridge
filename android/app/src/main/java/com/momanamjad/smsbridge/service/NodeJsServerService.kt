@@ -29,10 +29,10 @@ class NodeJsServerService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        Log.i(TAG, "Starting Node.js Server Service as Foreground...")
+        createNotificationChannel()
+        val notification = createNotification()
         try {
-            Log.i(TAG, "Starting Node.js Server Service as Foreground...")
-            createNotificationChannel()
-            val notification = createNotification()
             if (Build.VERSION.SDK_INT >= 34) {
                 ServiceCompat.startForeground(
                     this,
@@ -43,12 +43,24 @@ class NodeJsServerService : Service() {
             } else {
                 startForeground(NOTIFICATION_ID, notification)
             }
-            startNodeJsServer()
         } catch (e: Throwable) {
-            Log.e(TAG, "Failed to start NodeJsServerService", e)
+            // startForeground() failed — we MUST stop immediately or the OS will
+            // kill the entire app with ForegroundServiceDidNotStartInTimeException.
+            Log.e(TAG, "startForeground() failed, stopping service immediately", e)
             try {
                 val logFile = File(filesDir, "node_out.txt")
-                logFile.appendText("\n[NodeJsServerService Error]: ${Log.getStackTraceString(e)}\n")
+                logFile.appendText("\n[NodeJsServerService startForeground Error]: ${Log.getStackTraceString(e)}\n")
+            } catch (_: Exception) {}
+            stopSelf()
+            return
+        }
+        try {
+            startNodeJsServer()
+        } catch (e: Throwable) {
+            Log.e(TAG, "Failed to start Node.js server engine", e)
+            try {
+                val logFile = File(filesDir, "node_out.txt")
+                logFile.appendText("\n[NodeJsServerService startNodeJs Error]: ${Log.getStackTraceString(e)}\n")
             } catch (_: Exception) {}
         }
     }
@@ -86,11 +98,15 @@ class NodeJsServerService : Service() {
             isServerStarted = true
         }
         nodeJsThread = Thread {
+            val logFile = File(filesDir, "node_out.txt")
             try {
+                logFile.appendText("\n[${java.util.Date()}] NodeJsServerService: Thread started.\n")
                 // Load C++ shared standard library, Node.js engine and native bridge libraries
+                logFile.appendText("[${java.util.Date()}] Loading native libraries: c++_shared, node, node-bridge...\n")
                 System.loadLibrary("c++_shared")
                 System.loadLibrary("node")
                 System.loadLibrary("node-bridge")
+                logFile.appendText("[${java.util.Date()}] Native libraries loaded successfully.\n")
 
                 // Extract backend assets to internal files directory
                 val targetDir = File(filesDir, "backend")
@@ -99,9 +115,11 @@ class NodeJsServerService : Service() {
                 }
                 val nodeModulesDir = File(targetDir, "node_modules")
                 if (!nodeModulesDir.exists() || nodeModulesDir.list().isNullOrEmpty()) {
+                    logFile.appendText("[${java.util.Date()}] Extracting full backend assets...\n")
                     Log.d(TAG, "Initial extraction of full backend assets (including node_modules)...")
                     copyAssetFolder(assets, "backend", targetDir.absolutePath)
                 } else {
+                    logFile.appendText("[${java.util.Date()}] Updating dist folder...\n")
                     Log.d(TAG, "node_modules already exists. Updating dist folder only...")
                     copyAssetFolder(assets, "backend/dist", File(targetDir, "dist").absolutePath)
                     copyAssetFile(assets, "backend/package.json", File(targetDir, "package.json").absolutePath)
@@ -120,13 +138,30 @@ class NodeJsServerService : Service() {
                 }
 
                 // Launch Node.js main script
-                val mainScript = File(targetDir, "dist/server.js").absolutePath
-                val args = arrayOf("node", mainScript)
+                val mainScript = File(targetDir, "dist/server.js")
+                if (!mainScript.exists()) {
+                    Log.w(TAG, "server.js not found, extracting backend/dist...")
+                    copyAssetFolder(assets, "backend/dist", File(targetDir, "dist").absolutePath)
+                    copyAssetFile(assets, "backend/package.json", File(targetDir, "package.json").absolutePath)
+                }
+
+                if (!mainScript.exists()) {
+                    val err = "FATAL: server.js not found at ${mainScript.absolutePath}"
+                    Log.e(TAG, err)
+                    logFile.appendText("\n[$err]\n")
+                    return@Thread
+                }
+
+                val args = arrayOf("node", mainScript.absolutePath)
+                logFile.appendText("[${java.util.Date()}] Starting node with script: ${mainScript.absolutePath}\n")
                 Log.i(TAG, "Starting Node.js engine with: ${args.joinToString(" ")}")
-                val logFile = File(filesDir, "node_out.txt")
                 nodeJsStart(args, logFile.absolutePath)
             } catch (e: Throwable) {
-                Log.e(TAG, "Fatal error running Node.js server", e)
+                val err = Log.getStackTraceString(e)
+                Log.e(TAG, "Fatal error running Node.js server: $err", e)
+                try {
+                    logFile.appendText("\n[FATAL Node.js Engine Error]:\n$err\n")
+                } catch (_: Exception) {}
                 Handler(Looper.getMainLooper()).post {
                     Toast.makeText(this@NodeJsServerService, "Node.js Error: ${e.message}", Toast.LENGTH_LONG).show()
                 }
@@ -221,7 +256,7 @@ class NodeJsServerService : Service() {
             PendingIntent.FLAG_IMMUTABLE
         )
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(com.momanamjad.smsbridge.R.mipmap.ic_launcher)
+            .setSmallIcon(com.momanamjad.smsbridge.R.drawable.ic_notification)
             .setContentTitle("SMS Bridge Server")
             .setContentText("WebRTC server active on port 9000")
             .setOngoing(true)
