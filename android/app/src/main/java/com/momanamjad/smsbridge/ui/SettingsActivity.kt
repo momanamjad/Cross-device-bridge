@@ -69,36 +69,48 @@ class SettingsActivity : AppCompatActivity() {
                 }
             }
             binding.viewLogs.setOnClickListener {
-                val logFile = java.io.File(filesDir, "node_out.txt")
-                val logs = if (logFile.exists()) {
-                    logFile.readText()
-                } else {
-                    "No logs found. Is the server running?"
-                }
-                val scrollView = android.widget.ScrollView(this)
-                val textView = android.widget.TextView(this).apply {
-                    text = logs
-                    textSize = 14f
-                    setPadding(30, 30, 30, 30)
-                    setTextColor(android.graphics.Color.WHITE)
-                }
-                scrollView.addView(textView)
-                androidx.appcompat.app.AlertDialog.Builder(this)
-                    .setTitle("Server Logs")
-                    .setView(scrollView)
-                    .setPositiveButton("OK", null)
-                    .setNeutralButton("Clear") { _, _ ->
-                        if (logFile.exists()) {
-                            logFile.writeText("")
+                kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                    val logFile = java.io.File(filesDir, "node_out.txt")
+                    val fullLogs = if (logFile.exists()) {
+                        try { logFile.readText() } catch (e: Exception) { "Error: ${e.message}" }
+                    } else {
+                        "No logs found. Is the server running?"
+                    }
+                    val displayLogs = if (fullLogs.length > 30000) {
+                        "... [Earlier logs truncated for smooth display - tap 'Copy' for full log] ...\n\n" + fullLogs.takeLast(30000)
+                    } else {
+                        fullLogs
+                    }
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        val scrollView = android.widget.ScrollView(this@SettingsActivity)
+                        val textView = android.widget.TextView(this@SettingsActivity).apply {
+                            text = displayLogs
+                            textSize = 12f
+                            setPadding(30, 30, 30, 30)
+                            setTextColor(android.graphics.Color.WHITE)
+                            setTextIsSelectable(true)
                         }
+                        scrollView.addView(textView)
+                        androidx.appcompat.app.AlertDialog.Builder(this@SettingsActivity)
+                            .setTitle("Server Logs")
+                            .setView(scrollView)
+                            .setPositiveButton("OK", null)
+                            .setNeutralButton("Clear") { _, _ ->
+                                kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                                    if (logFile.exists()) {
+                                        logFile.writeText("")
+                                    }
+                                }
+                            }
+                            .setNegativeButton("Copy") { _, _ ->
+                                val clipboard = getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                                val clip = android.content.ClipData.newPlainText("Server Logs", fullLogs)
+                                clipboard.setPrimaryClip(clip)
+                                toast("Full logs copied to clipboard")
+                            }
+                            .show()
                     }
-                    .setNegativeButton("Copy") { _, _ ->
-                        val clipboard = getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                        val clip = android.content.ClipData.newPlainText("Server Logs", logs)
-                        clipboard.setPrimaryClip(clip)
-                        toast("Logs copied to clipboard")
-                    }
-                    .show()
+                }
             }
         } catch (e: Throwable) {
             Log.e("SettingsActivity", "Fatal error in SettingsActivity.onCreate", e)

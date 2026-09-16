@@ -51,10 +51,11 @@ function initSocket(httpServer) {
         const extRoom = `device_ext:${externalId}`;
         void socket.join(room);
         void socket.join(extRoom);
-        socket.use(([event, ...args], next) => {
-            if (args.length > 0 && args[0] && typeof args[0] === "object" && typeof args[0].data === "string") {
+        socket.use((packet, next) => {
+            // packet: [eventName, arg1, arg2, ...]
+            if (packet.length > 1 && packet[1] && typeof packet[1] === "object" && typeof packet[1].data === "string") {
                 try {
-                    args[0] = (0, crypto_1.decryptPayload)(args[0].data, environment_1.env.registerSecret);
+                    packet[1] = (0, crypto_1.decryptPayload)(packet[1].data, environment_1.env.registerSecret);
                 }
                 catch (err) {
                     logger_1.logger.error({ err }, "Failed to decrypt incoming socket payload");

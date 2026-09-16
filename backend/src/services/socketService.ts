@@ -52,10 +52,11 @@ export function initSocket(httpServer: HttpServer): Server {
     void socket.join(room);
     void socket.join(extRoom);
     
-    socket.use(([event, ...args], next) => {
-      if (args.length > 0 && args[0] && typeof args[0] === "object" && typeof args[0].data === "string") {
+    socket.use((packet, next) => {
+      // packet: [eventName, arg1, arg2, ...]
+      if (packet.length > 1 && packet[1] && typeof packet[1] === "object" && typeof (packet[1] as any).data === "string") {
         try {
-          args[0] = decryptPayload(args[0].data, env.registerSecret);
+          packet[1] = decryptPayload((packet[1] as any).data, env.registerSecret);
         } catch (err) {
           logger.error({ err }, "Failed to decrypt incoming socket payload");
           return next(new Error("Decryption failed"));

@@ -366,21 +366,18 @@ export class WebRTCSignalServer {
       const androidSocket = sockets.find((s) => s.data.externalId && s.data.externalId !== "iphone");
       if (androidSocket) {
         targetDevice = androidSocket.data.externalId;
+        androidSocket.emit(event, data);
       } else {
         targetDevice = "realme_c3_1"; // fallback
       }
+      io.to(`device_ext:${targetDevice}`).emit(event, data);
     } else {
       targetDevice = "iphone";
+      const encrypted = encryptPayload(data, env.registerSecret);
+      io.to(`device_ext:${targetDevice}`).emit(event, { data: encrypted, ...data });
     }
 
     logger.debug(`WebRTCSignalServer: broadcastToDevice target=${targetDevice} event=${event}`);
-    if (targetDevice === "iphone") {
-      const encrypted = encryptPayload(data, env.registerSecret);
-      io.to(`device_ext:${targetDevice}`).emit(event, { data: encrypted, ...data });
-    } else {
-      // Android client expects raw JSON fields for immediate zero-overhead processing
-      io.to(`device_ext:${targetDevice}`).emit(event, data);
-    }
   }
 
   private static async joinDevicesToCallRoom(callId: string): Promise<void> {
@@ -389,11 +386,8 @@ export class WebRTCSignalServer {
       const sockets = await io.fetchSockets();
       let joinedCount = 0;
       for (const socket of sockets) {
-        const extId = socket.data.externalId;
-        if (extId === "realme_c3_1" || extId === "iphone") {
-          void socket.join(`call_${callId}`);
-          joinedCount++;
-        }
+        void socket.join(`call_${callId}`);
+        joinedCount++;
       }
       logger.info(`WebRTCSignalServer: joined ${joinedCount} sockets to room call_${callId}`);
     } catch (err) {

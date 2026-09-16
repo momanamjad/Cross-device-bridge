@@ -4,6 +4,17 @@ exports.registerCallHandlers = registerCallHandlers;
 const zod_1 = require("zod");
 const webrtcSignal_1 = require("../services/webrtcSignal");
 const winstonLogger_1 = require("../lib/winstonLogger");
+const crypto_1 = require("../lib/crypto");
+const environment_1 = require("../config/environment");
+function unwrapPayload(payload) {
+    if (payload && typeof payload === "object" && typeof payload.data === "string") {
+        try {
+            return (0, crypto_1.decryptPayload)(payload.data, environment_1.env.registerSecret);
+        }
+        catch (_) { }
+    }
+    return payload;
+}
 // Payload Schemas
 const callIncomingSchema = zod_1.z.object({
     call_id: zod_1.z.string().min(1),
@@ -49,7 +60,7 @@ function registerCallHandlers(io, socket) {
                 socket.emit("call:error", { call_id: "", error_message: "iPhones cannot signal incoming SIM calls" });
                 return;
             }
-            const data = callIncomingSchema.parse(payload);
+            const data = callIncomingSchema.parse(unwrapPayload(payload));
             await socket.join(`call_${data.call_id}`);
             await webrtcSignal_1.WebRTCSignalServer.handleIncomingCall(data.caller_number, data.call_id);
         }
@@ -61,7 +72,7 @@ function registerCallHandlers(io, socket) {
     socket.on("call:incoming-ack", async (payload) => {
         try {
             winstonLogger_1.winstonLogger.info(`Socket event "call:incoming-ack" from device=${fromDevice} payload=${JSON.stringify(payload)}`);
-            const data = callIncomingAckSchema.parse(payload);
+            const data = callIncomingAckSchema.parse(unwrapPayload(payload));
             await socket.join(`call_${data.call_id}`);
             winstonLogger_1.winstonLogger.info(`iPhone acknowledged incoming call: ${data.call_id}`);
         }
@@ -73,7 +84,7 @@ function registerCallHandlers(io, socket) {
     socket.on("call:accept", async (payload) => {
         try {
             winstonLogger_1.winstonLogger.info(`Socket event "call:accept" from device=${fromDevice} payload=${JSON.stringify(payload)}`);
-            const data = callAcceptSchema.parse(payload);
+            const data = callAcceptSchema.parse(unwrapPayload(payload));
             await socket.join(`call_${data.call_id}`);
             await webrtcSignal_1.WebRTCSignalServer.handleAcceptCall(data.call_id, fromDevice);
         }
@@ -85,7 +96,7 @@ function registerCallHandlers(io, socket) {
     const handleReject = async (payload) => {
         try {
             winstonLogger_1.winstonLogger.info(`Socket event "call:reject/rejected" from device=${fromDevice} payload=${JSON.stringify(payload)}`);
-            const data = callRejectSchema.parse(payload);
+            const data = callRejectSchema.parse(unwrapPayload(payload));
             await socket.join(`call_${data.call_id}`);
             await webrtcSignal_1.WebRTCSignalServer.handleRejectCall(data.call_id, fromDevice);
         }
@@ -99,7 +110,7 @@ function registerCallHandlers(io, socket) {
     socket.on("call:outgoing", async (payload) => {
         try {
             winstonLogger_1.winstonLogger.info(`Socket event "call:outgoing" from device=${fromDevice} payload=${JSON.stringify(payload)}`);
-            const data = callOutgoingSchema.parse(payload);
+            const data = callOutgoingSchema.parse(unwrapPayload(payload));
             await socket.join(`call_${data.call_id}`);
             await webrtcSignal_1.WebRTCSignalServer.handleOutgoingCall(data.phone_number, data.call_id);
         }
@@ -111,7 +122,7 @@ function registerCallHandlers(io, socket) {
     socket.on("call:hangup", async (payload) => {
         try {
             winstonLogger_1.winstonLogger.info(`Socket event "call:hangup" from device=${fromDevice} payload=${JSON.stringify(payload)}`);
-            const data = callHangupSchema.parse(payload);
+            const data = callHangupSchema.parse(unwrapPayload(payload));
             await socket.join(`call_${data.call_id}`);
             await webrtcSignal_1.WebRTCSignalServer.handleCallEnd(data.call_id, data.duration);
         }
@@ -123,7 +134,7 @@ function registerCallHandlers(io, socket) {
     socket.on("webrtc:offer", async (payload) => {
         try {
             winstonLogger_1.winstonLogger.info(`Socket event "webrtc:offer" from device=${fromDevice}`);
-            const data = webrtcOfferSchema.parse(payload);
+            const data = webrtcOfferSchema.parse(unwrapPayload(payload));
             await socket.join(`call_${data.call_id}`);
             await webrtcSignal_1.WebRTCSignalServer.relaySDPOffer(data.call_id, data.sdp_offer);
             if (data.ice_candidates && Array.isArray(data.ice_candidates)) {
@@ -140,7 +151,7 @@ function registerCallHandlers(io, socket) {
     socket.on("webrtc:answer", async (payload) => {
         try {
             winstonLogger_1.winstonLogger.info(`Socket event "webrtc:answer" from device=${fromDevice}`);
-            const data = webrtcAnswerSchema.parse(payload);
+            const data = webrtcAnswerSchema.parse(unwrapPayload(payload));
             await socket.join(`call_${data.call_id}`);
             await webrtcSignal_1.WebRTCSignalServer.relaySDPAnswer(data.call_id, data.sdp_answer);
         }
@@ -152,7 +163,7 @@ function registerCallHandlers(io, socket) {
     socket.on("webrtc:ice-candidate", async (payload) => {
         try {
             winstonLogger_1.winstonLogger.debug(`Socket event "webrtc:ice-candidate" from device=${fromDevice}`);
-            const data = webrtcIceCandidateSchema.parse(payload);
+            const data = webrtcIceCandidateSchema.parse(unwrapPayload(payload));
             await socket.join(`call_${data.call_id}`);
             await webrtcSignal_1.WebRTCSignalServer.relayICECandidate(data.call_id, data.candidate, fromDevice);
         }

@@ -124,36 +124,52 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showLogsDialog() {
-        val logFile = java.io.File(filesDir, "node_out.txt")
-        val logs = if (logFile.exists() && logFile.length() > 0) {
-            logFile.readText()
-        } else {
-            "No logs found in node_out.txt yet.\nServer IP: ${getDeviceWifiIp()}:9000\nDevice ID: ${BridgeApp.instance.settings.deviceId}\nAPI Token: ${BridgeApp.instance.settings.apiToken.take(10)}..."
-        }
-        val scrollView = android.widget.ScrollView(this)
-        val textView = android.widget.TextView(this).apply {
-            text = logs
-            textSize = 13f
-            setPadding(30, 30, 30, 30)
-            setTextColor(android.graphics.Color.WHITE)
-        }
-        scrollView.addView(textView)
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("Server Logs")
-            .setView(scrollView)
-            .setPositiveButton("OK", null)
-            .setNeutralButton("Clear") { _, _ ->
-                if (logFile.exists()) {
-                    logFile.writeText("")
+        CoroutineScope(Dispatchers.IO).launch {
+            val logFile = java.io.File(filesDir, "node_out.txt")
+            val fullLogs = if (logFile.exists() && logFile.length() > 0) {
+                try {
+                    logFile.readText()
+                } catch (e: Exception) {
+                    "Error reading logs: ${e.message}"
                 }
+            } else {
+                "No logs found in node_out.txt yet.\nServer IP: ${getDeviceWifiIp()}:9000\nDevice ID: ${BridgeApp.instance.settings.deviceId}\nAPI Token: ${BridgeApp.instance.settings.apiToken.take(10)}..."
             }
-            .setNegativeButton("Copy") { _, _ ->
-                val clipboard = getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                val clip = android.content.ClipData.newPlainText("Server Logs", logs)
-                clipboard.setPrimaryClip(clip)
-                android.widget.Toast.makeText(this, "Logs copied to clipboard", android.widget.Toast.LENGTH_SHORT).show()
+            val displayLogs = if (fullLogs.length > 30000) {
+                "... [Earlier logs truncated for smooth display - tap 'Copy' for full log] ...\n\n" + fullLogs.takeLast(30000)
+            } else {
+                fullLogs
             }
-            .show()
+            withContext(Dispatchers.Main) {
+                val scrollView = android.widget.ScrollView(this@MainActivity)
+                val textView = android.widget.TextView(this@MainActivity).apply {
+                    text = displayLogs
+                    textSize = 12f
+                    setPadding(30, 30, 30, 30)
+                    setTextColor(android.graphics.Color.WHITE)
+                    setTextIsSelectable(true)
+                }
+                scrollView.addView(textView)
+                androidx.appcompat.app.AlertDialog.Builder(this@MainActivity)
+                    .setTitle("Server Logs")
+                    .setView(scrollView)
+                    .setPositiveButton("OK", null)
+                    .setNeutralButton("Clear") { _, _ ->
+                        CoroutineScope(Dispatchers.IO).launch {
+                            if (logFile.exists()) {
+                                logFile.writeText("")
+                            }
+                        }
+                    }
+                    .setNegativeButton("Copy") { _, _ ->
+                        val clipboard = getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                        val clip = android.content.ClipData.newPlainText("Server Logs", fullLogs)
+                        clipboard.setPrimaryClip(clip)
+                        android.widget.Toast.makeText(this@MainActivity, "Full logs copied to clipboard", android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                    .show()
+            }
+        }
     }
 
     private fun startHealthPolling() {

@@ -2,6 +2,17 @@ import { Server, Socket } from "socket.io";
 import { z } from "zod";
 import { WebRTCSignalServer } from "../services/webrtcSignal";
 import { winstonLogger as logger } from "../lib/winstonLogger";
+import { decryptPayload } from "../lib/crypto";
+import { env } from "../config/environment";
+
+function unwrapPayload(payload: any): any {
+  if (payload && typeof payload === "object" && typeof payload.data === "string") {
+    try {
+      return decryptPayload(payload.data, env.registerSecret);
+    } catch (_) {}
+  }
+  return payload;
+}
 
 // Payload Schemas
 const callIncomingSchema = z.object({
@@ -58,7 +69,7 @@ export function registerCallHandlers(io: Server, socket: Socket) {
         socket.emit("call:error", { call_id: "", error_message: "iPhones cannot signal incoming SIM calls" });
         return;
       }
-      const data = callIncomingSchema.parse(payload);
+      const data = callIncomingSchema.parse(unwrapPayload(payload));
       await socket.join(`call_${data.call_id}`);
       await WebRTCSignalServer.handleIncomingCall(data.caller_number, data.call_id);
     } catch (err: any) {
@@ -70,7 +81,7 @@ export function registerCallHandlers(io: Server, socket: Socket) {
   socket.on("call:incoming-ack", async (payload: unknown) => {
     try {
       logger.info(`Socket event "call:incoming-ack" from device=${fromDevice} payload=${JSON.stringify(payload)}`);
-      const data = callIncomingAckSchema.parse(payload);
+      const data = callIncomingAckSchema.parse(unwrapPayload(payload));
       await socket.join(`call_${data.call_id}`);
       logger.info(`iPhone acknowledged incoming call: ${data.call_id}`);
     } catch (err: any) {
@@ -82,7 +93,7 @@ export function registerCallHandlers(io: Server, socket: Socket) {
   socket.on("call:accept", async (payload: unknown) => {
     try {
       logger.info(`Socket event "call:accept" from device=${fromDevice} payload=${JSON.stringify(payload)}`);
-      const data = callAcceptSchema.parse(payload);
+      const data = callAcceptSchema.parse(unwrapPayload(payload));
       await socket.join(`call_${data.call_id}`);
       await WebRTCSignalServer.handleAcceptCall(data.call_id, fromDevice);
     } catch (err: any) {
@@ -94,7 +105,7 @@ export function registerCallHandlers(io: Server, socket: Socket) {
   const handleReject = async (payload: unknown) => {
     try {
       logger.info(`Socket event "call:reject/rejected" from device=${fromDevice} payload=${JSON.stringify(payload)}`);
-      const data = callRejectSchema.parse(payload);
+      const data = callRejectSchema.parse(unwrapPayload(payload));
       await socket.join(`call_${data.call_id}`);
       await WebRTCSignalServer.handleRejectCall(data.call_id, fromDevice);
     } catch (err: any) {
@@ -109,7 +120,7 @@ export function registerCallHandlers(io: Server, socket: Socket) {
   socket.on("call:outgoing", async (payload: unknown) => {
     try {
       logger.info(`Socket event "call:outgoing" from device=${fromDevice} payload=${JSON.stringify(payload)}`);
-      const data = callOutgoingSchema.parse(payload);
+      const data = callOutgoingSchema.parse(unwrapPayload(payload));
       await socket.join(`call_${data.call_id}`);
       await WebRTCSignalServer.handleOutgoingCall(data.phone_number, data.call_id);
     } catch (err: any) {
@@ -121,7 +132,7 @@ export function registerCallHandlers(io: Server, socket: Socket) {
   socket.on("call:hangup", async (payload: unknown) => {
     try {
       logger.info(`Socket event "call:hangup" from device=${fromDevice} payload=${JSON.stringify(payload)}`);
-      const data = callHangupSchema.parse(payload);
+      const data = callHangupSchema.parse(unwrapPayload(payload));
       await socket.join(`call_${data.call_id}`);
       await WebRTCSignalServer.handleCallEnd(data.call_id, data.duration);
     } catch (err: any) {
@@ -133,7 +144,7 @@ export function registerCallHandlers(io: Server, socket: Socket) {
   socket.on("webrtc:offer", async (payload: unknown) => {
     try {
       logger.info(`Socket event "webrtc:offer" from device=${fromDevice}`);
-      const data = webrtcOfferSchema.parse(payload);
+      const data = webrtcOfferSchema.parse(unwrapPayload(payload));
       await socket.join(`call_${data.call_id}`);
       await WebRTCSignalServer.relaySDPOffer(data.call_id, data.sdp_offer);
 
@@ -151,7 +162,7 @@ export function registerCallHandlers(io: Server, socket: Socket) {
   socket.on("webrtc:answer", async (payload: unknown) => {
     try {
       logger.info(`Socket event "webrtc:answer" from device=${fromDevice}`);
-      const data = webrtcAnswerSchema.parse(payload);
+      const data = webrtcAnswerSchema.parse(unwrapPayload(payload));
       await socket.join(`call_${data.call_id}`);
       await WebRTCSignalServer.relaySDPAnswer(data.call_id, data.sdp_answer);
     } catch (err: any) {
@@ -163,7 +174,7 @@ export function registerCallHandlers(io: Server, socket: Socket) {
   socket.on("webrtc:ice-candidate", async (payload: unknown) => {
     try {
       logger.debug(`Socket event "webrtc:ice-candidate" from device=${fromDevice}`);
-      const data = webrtcIceCandidateSchema.parse(payload);
+      const data = webrtcIceCandidateSchema.parse(unwrapPayload(payload));
       await socket.join(`call_${data.call_id}`);
       await WebRTCSignalServer.relayICECandidate(data.call_id, data.candidate, fromDevice);
     } catch (err: any) {
