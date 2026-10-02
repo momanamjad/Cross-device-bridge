@@ -29,10 +29,32 @@ struct IncomingCallSheet: View {
                             }
                         }
                     
-                    Text("Incoming Cell Call")
+                    Text("Incoming Cell Call (Realme SIM)")
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.green)
                         .tracking(1)
+                    
+                    if let waURL = whatsappURL {
+                        Button(action: {
+                            let impact = UIImpactFeedbackGenerator(style: .medium)
+                            impact.impactOccurred()
+                            UIApplication.shared.open(waURL)
+                        }) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "message.fill")
+                                Text("Call / Reply on WhatsApp")
+                                    .fontWeight(.semibold)
+                            }
+                            .font(.subheadline)
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 12)
+                            .background(Color(red: 0.15, green: 0.75, blue: 0.35))
+                            .cornerRadius(25)
+                            .shadow(color: .green.opacity(0.3), radius: 6, x: 0, y: 3)
+                        }
+                        .padding(.top, 8)
+                    }
                 }
                 
                 Spacer()
@@ -76,5 +98,17 @@ struct IncomingCallSheet: View {
                 .padding(.bottom, 60)
             }
         }
+    }
+    
+    private var whatsappURL: URL? {
+        let raw = callInfo.callerId.filter { $0.isNumber }
+        var phone = raw
+        if phone.hasPrefix("00") {
+            phone = String(phone.dropFirst(2))
+        } else if phone.hasPrefix("0") {
+            phone = "92" + phone.dropFirst()
+        }
+        guard !phone.isEmpty else { return nil }
+        return URL(string: "https://wa.me/\(phone)")
     }
 }

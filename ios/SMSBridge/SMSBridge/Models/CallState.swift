@@ -42,4 +42,22 @@ struct SMSMessage: Identifiable, Codable, Equatable {
     let sender: String
     let content: String
     let timestamp: Date
+    var otpCode: String?
+    
+    var extractedOtp: String? {
+        if let otp = otpCode, !otp.isEmpty { return otp }
+        let pattern = #"(?i)(?:code|otp|pin|verification|password|code is|otp is)[:\s]+([0-9]{4,8})"#
+        if let regex = try? NSRegularExpression(pattern: pattern),
+           let match = regex.firstMatch(in: content, range: NSRange(content.startIndex..., in: content)),
+           let range = Range(match.range(at: 1), in: content) {
+            return String(content[range])
+        }
+        let digitPattern = #"\b([0-9]{4,8})\b"#
+        if let regex = try? NSRegularExpression(pattern: digitPattern),
+           let match = regex.firstMatch(in: content, range: NSRange(content.startIndex..., in: content)),
+           let range = Range(match.range(at: 1), in: content) {
+            return String(content[range])
+        }
+        return nil
+    }
 }

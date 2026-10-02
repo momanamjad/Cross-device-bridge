@@ -112,6 +112,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun startBridge() {
         try {
+            requestIgnoreBatteryOptimizations()
             val intent = Intent(this, BridgeForegroundService::class.java)
             ContextCompat.startForegroundService(this, intent)
             bridgeStarted = true
@@ -267,7 +268,9 @@ class MainActivity : AppCompatActivity() {
                 for (addr in addrs) {
                     if (!addr.isLoopbackAddress && addr is java.net.Inet4Address) {
                         val ip = addr.hostAddress ?: continue
-                        if (iface.name.startsWith("wlan") || iface.name.startsWith("eth")) {
+                        // Priority 1: Hotspot (ap, softap) or Wi-Fi (wlan) or Ethernet (eth)
+                        val name = iface.name.lowercase()
+                        if (name.contains("ap") || name.startsWith("wlan") || name.startsWith("eth")) {
                             return ip
                         }
                         if (ip.startsWith("192.168.") || ip.startsWith("10.") || ip.startsWith("172.")) {
@@ -279,6 +282,22 @@ class MainActivity : AppCompatActivity() {
             return candidateIp ?: "127.0.0.1"
         } catch (_: Exception) {
             return "127.0.0.1"
+        }
+    }
+
+    private fun requestIgnoreBatteryOptimizations() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val powerManager = getSystemService(android.content.Context.POWER_SERVICE) as? android.os.PowerManager
+            if (powerManager != null && !powerManager.isIgnoringBatteryOptimizations(packageName)) {
+                try {
+                    val intent = Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                        data = android.net.Uri.parse("package:$packageName")
+                    }
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    android.util.Log.w("MainActivity", "Cannot request ignore battery optimizations: ${e.message}")
+                }
+            }
         }
     }
 

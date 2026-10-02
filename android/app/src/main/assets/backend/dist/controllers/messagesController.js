@@ -13,6 +13,14 @@ const socketService_1 = require("../services/socketService");
 function deviceOf(req) {
     return req.device;
 }
+function extractOtp(text) {
+    const keywordMatch = text.match(/(?:code|otp|pin|verification|password|code is|otp is)[:\s]+([0-9]{4,8})/i);
+    if (keywordMatch && keywordMatch[1]) {
+        return keywordMatch[1];
+    }
+    const digitMatch = text.match(/\b([0-9]{4,8})\b/);
+    return digitMatch ? digitMatch[1] : null;
+}
 async function createSms(req, res, next) {
     try {
         const device = deviceOf(req);
@@ -28,11 +36,13 @@ async function createSms(req, res, next) {
                 timestamp: new Date(body.timestamp),
             },
         });
+        const otpCode = extractOtp(message.content);
         const payload = {
             id: message.id,
             sender: message.sender,
             message: message.content,
             content: message.content,
+            otp_code: otpCode,
             timestamp: message.timestamp.toISOString(),
             synced: message.synced,
         };
@@ -113,6 +123,7 @@ async function listMessages(req, res, next) {
                 sender: m.sender,
                 message: m.content,
                 content: m.content,
+                otp_code: extractOtp(m.content),
                 timestamp: m.timestamp.toISOString(),
                 synced: m.synced,
             })),
