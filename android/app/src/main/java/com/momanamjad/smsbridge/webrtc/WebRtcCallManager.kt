@@ -294,6 +294,18 @@ object WebRtcCallManager {
         val duration = if (startTimeMillis > 0L) (System.currentTimeMillis() - startTimeMillis) / 1000 else 0L
         updateState(CallState.Ended(callId, duration))
 
+        // Notify server and iPhone immediately so iPhone ends the call and stops the timer
+        try {
+            SocketManager.emit("call:hangup", mapOf(
+                "call_id" to callId,
+                "duration" to duration
+            ))
+            val logFile = java.io.File(context.filesDir, "node_out.txt")
+            logFile.appendText("\n[${java.util.Date()}] [Bridge Dialer] Call ended: Emitted call:hangup to iPhone (duration: ${duration}s)\n")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to emit call:hangup to server", e)
+        }
+
         // Save Call history
         val record = CallRecord(
             callId = callId,
