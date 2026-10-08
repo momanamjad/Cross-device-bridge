@@ -42,6 +42,11 @@ android/app/release.keystore
 frontend/dev-dist/
 frontend/dist/
 
+# iOS
+ios/SMSBridge/Pods/
+ios/SMSBridge/*.xcworkspace
+ios/SMSBridge/*.xcodeproj
+*.xcuserstate
 # Misc
 *.swp
 .turbo/

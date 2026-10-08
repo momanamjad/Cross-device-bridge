@@ -131,12 +131,32 @@ class WebSocketService: ObservableObject {
                   let content = dict["message"] as? String ?? dict["content"] as? String else { return }
             
             AppLog("Received SMS from \(sender): \(content.prefix(30))...", tag: "SMS")
-            let message = SMSMessage(id: id, sender: sender, content: content, timestamp: Date())
+            let backendOtp = dict["otp_code"] as? String
+            var message = SMSMessage(id: id, sender: sender, content: content, timestamp: Date())
+            if let backendOtp = backendOtp, !backendOtp.isEmpty {
+                message.otpCode = backendOtp
+            }
+            
+            // 1. Auto-Copy to Clipboard immediately if OTP is present
+            if let otp = message.extractedOtp, !otp.isEmpty {
+                DispatchQueue.main.async {
+                    UIPasteboard.general.string = otp
+                    let generator = UINotificationFeedbackGenerator()
+                    generator.notificationOccurred(.success)
+                    AppLog("Auto-copied OTP to clipboard: \(otp)", tag: "SMS")
+                }
+            }
+            
+            // 2. Post Local Notification with Banner & Sound
+            NotificationManager.shared.postSMSNotification(message: message)
+            
+            // 3. Notify ViewModel
             self?.onSMSReceived?(message)
             
-            // Confirm message receipt to server
+            // 4. Confirm message receipt to server
             self?.emit("message:confirm", ["id": id])
         }
+
 
         
         socket?.connect()

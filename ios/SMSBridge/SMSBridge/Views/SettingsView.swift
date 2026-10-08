@@ -181,6 +181,47 @@ struct SettingsView: View {
                     }
                 }
             }
+            
+            Section(header: Text("Notifications & OTP Auto-Copy")) {
+                Button(action: {
+                    NotificationManager.shared.requestAuthorization()
+                    let impact = UIImpactFeedbackGenerator(style: .medium)
+                    impact.impactOccurred()
+                    alertMessage = "Notification permissions requested. Ensure notifications are allowed in iOS Settings > Notifications > SMSBridge."
+                    showAlert = true
+                }) {
+                    HStack {
+                        Image(systemName: "bell.badge.fill")
+                            .foregroundColor(.blue)
+                        Text("Enable Notifications Permission")
+                            .foregroundColor(.primary)
+                    }
+                }
+                
+                Button(action: {
+                    let testMsg = SMSMessage(
+                        id: UUID().uuidString,
+                        sender: "3737",
+                        content: "Your easypaisa mobile account registration/login OTP is VgPr44F96f OTP aur PIN ko mahfooz rakhein aur kissi ko na batayein <frq8nwMNn2c>",
+                        timestamp: Date()
+                    )
+                    if let otp = testMsg.extractedOtp {
+                        UIPasteboard.general.string = otp
+                        let impact = UINotificationFeedbackGenerator()
+                        impact.notificationOccurred(.success)
+                    }
+                    NotificationManager.shared.postSMSNotification(message: testMsg)
+                    alertMessage = "Test notification sent for 3737!\nOTP 'VgPr44F96f' copied to clipboard."
+                    showAlert = true
+                }) {
+                    HStack {
+                        Image(systemName: "paperplane.fill")
+                            .foregroundColor(.purple)
+                        Text("Test Easypaisa OTP Notification")
+                            .foregroundColor(.purple)
+                    }
+                }
+            }
         }
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)

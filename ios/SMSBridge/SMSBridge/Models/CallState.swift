@@ -44,20 +44,61 @@ struct SMSMessage: Identifiable, Codable, Equatable {
     let timestamp: Date
     var otpCode: String?
     
-    var extractedOtp: String? {
-        if let otp = otpCode, !otp.isEmpty { return otp }
-        let pattern = #"(?i)(?:code|otp|pin|verification|password|code is|otp is)[:\s]+([0-9]{4,8})"#
+    var smsRetrieverHash: String? {
+        let pattern = #"<([a-zA-Z0-9_\-\+]{11})>"#
         if let regex = try? NSRegularExpression(pattern: pattern),
-           let match = regex.firstMatch(in: content, range: NSRange(content.startIndex..., in: content)),
-           let range = Range(match.range(at: 1), in: content) {
-            return String(content[range])
-        }
-        let digitPattern = #"\b([0-9]{4,8})\b"#
-        if let regex = try? NSRegularExpression(pattern: digitPattern),
            let match = regex.firstMatch(in: content, range: NSRange(content.startIndex..., in: content)),
            let range = Range(match.range(at: 1), in: content) {
             return String(content[range])
         }
         return nil
     }
+    
+    var extractedOtp: String? {
+        if let otp = otpCode, !otp.isEmpty { return otp }
+        
+        // 1. Clean out the trailing SMS Retriever hash <...> so it is never mistaken for the OTP
+        var cleanContent = content
+        if let hashRegex = try? NSRegularExpression(pattern: #"<[a-zA-Z0-9_\-\+]{10,12}>"#) {
+            cleanContent = hashRegex.stringByReplacingMatches(in: cleanContent, range: NSRange(cleanContent.startIndex..., in: cleanContent), withTemplate: "")
+        }
+        
+        // 2. High-confidence prefix match: Supports alphanumeric (e.g. Easypaisa 'VgPr44F96f') and numeric
+        let contextualPattern = #"(?i)(?:registration\/login\s+otp\s+is|login\s+otp\s+is|registration\s+otp\s+is|otp\s+is|code\s+is|pin\s+is|verification\s+code\s+is|password\s+is|otp[:\s]+|code[:\s]+|pin[:\s]+)\s*([a-zA-Z0-9]{4,10})"#
+        if let regex = try? NSRegularExpression(pattern: contextualPattern),
+           let match = regex.firstMatch(in: cleanContent, range: NSRange(cleanContent.startIndex..., in: cleanContent)),
+           let range = Range(match.range(at: 1), in: cleanContent) {
+            let candidate = String(cleanContent[range])
+            // Ensure candidate contains at least one digit
+            if candidate.rangeOfCharacter(from: .decimalDigits) != nil {
+                return candidate
+            }
+        }
+        
+        // 3. Fallback: If message contains keywords (otp, code, pin, verification, verify, password), look for 4-8 digits
+        let hasOtpKeyword = cleanContent.range(of: #"(?i)\b(otp|code|pin|verification|verify|password)\b"#, options: .regularExpression) != nil
+        if hasOtpKeyword {
+            let digitPattern = #"\b([0-9]{4,8})\b"#
+            if let regex = try? NSRegularExpression(pattern: digitPattern) {
+                let matches = regex.matches(in: cleanContent, range: NSRange(cleanContent.startIndex..., in: cleanContent))
+                for match in matches {
+                    if let range = Range(match.range(at: 1), in: cleanContent) {
+                        let candidate = String(cleanContent[range])
+                        let endIdx = match.range.upperBound
+                        let lengthRemaining = cleanContent.utf16.count - endIdx
+                        let peekLength = min(10, max(0, lengthRemaining))
+                        if let peekRange = Range(NSRange(location: endIdx, length: peekLength), in: cleanContent) {
+                            let followingText = String(cleanContent[peekRange]).lowercased()
+                            if followingText.contains("mb") || followingText.contains("gb") || followingText.contains("min") || followingText.contains("rs") || followingText.contains("paisa") {
+                                continue
+                            }
+                        }
+                        return candidate
+                    }
+                }
+            }
+        }
+        return nil
+    }
 }
+

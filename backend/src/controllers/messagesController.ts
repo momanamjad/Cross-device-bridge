@@ -10,13 +10,36 @@ function deviceOf(req: Request) {
 }
 
 function extractOtp(text: string): string | null {
-  const keywordMatch = text.match(/(?:code|otp|pin|verification|password|code is|otp is)[:\s]+([0-9]{4,8})/i);
-  if (keywordMatch && keywordMatch[1]) {
-    return keywordMatch[1];
+  // Strip trailing Android SMS Retriever hash <...>
+  const clean = text.replace(/<[a-zA-Z0-9_\-+]{10,12}>/g, "");
+
+  // High-confidence prefix match: supports alphanumeric (e.g. Easypaisa 'VgPr44F96f') and numeric
+  const contextualMatch = clean.match(
+    /(?:registration\/login\s+otp\s+is|login\s+otp\s+is|registration\s+otp\s+is|otp\s+is|code\s+is|pin\s+is|verification\s+code\s+is|password\s+is|otp[:\s]+|code[:\s]+|pin[:\s]+)\s*([a-zA-Z0-9]{4,10})/i
+  );
+  if (contextualMatch && contextualMatch[1]) {
+    const candidate = contextualMatch[1];
+    if (/\d/.test(candidate)) {
+      return candidate;
+    }
   }
-  const digitMatch = text.match(/\b([0-9]{4,8})\b/);
-  return digitMatch ? digitMatch[1] : null;
+
+  // Fallback: only if message contains OTP/verification keywords
+  if (/\b(otp|code|pin|verification|verify|password)\b/i.test(clean)) {
+    const digitMatches = [...clean.matchAll(/\b([0-9]{4,8})\b/g)];
+    for (const match of digitMatches) {
+      const idx = match.index ?? 0;
+      const following = clean.slice(idx + match[0].length, idx + match[0].length + 10).toLowerCase();
+      if (/mb|gb|min|rs|paisa/.test(following)) {
+        continue;
+      }
+      return match[1];
+    }
+  }
+
+  return null;
 }
+
 
 export async function createSms(
   req: Request,

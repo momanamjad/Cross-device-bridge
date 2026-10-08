@@ -32,40 +32,53 @@ struct SMSMessageRow: View {
                 .foregroundColor(.primary)
                 .lineLimit(6)
             
-            // Smart OTP Copy Action
-            if let otp = message.extractedOtp {
-                HStack {
-                    Button(action: {
-                        UIPasteboard.general.string = otp
-                        let generator = UINotificationFeedbackGenerator()
-                        generator.notificationOccurred(.success)
-                        withAnimation {
-                            justCopied = true
-                        }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            // Smart OTP & Hash Actions
+            if message.extractedOtp != nil || message.smsRetrieverHash != nil {
+                HStack(spacing: 8) {
+                    if let otp = message.extractedOtp {
+                        Button(action: {
+                            UIPasteboard.general.string = otp
+                            let generator = UINotificationFeedbackGenerator()
+                            generator.notificationOccurred(.success)
                             withAnimation {
-                                justCopied = false
+                                justCopied = true
                             }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                                withAnimation {
+                                    justCopied = false
+                                }
+                            }
+                        }) {
+                            HStack(spacing: 6) {
+                                Image(systemName: justCopied ? "checkmark.circle.fill" : "doc.on.doc.fill")
+                                    .foregroundColor(justCopied ? .green : .blue)
+                                Text(justCopied ? "Copied: \(otp)" : "Copy OTP (\(otp))")
+                                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                                    .foregroundColor(justCopied ? .green : .blue)
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(justCopied ? Color.green.opacity(0.15) : Color.blue.opacity(0.12))
+                            .cornerRadius(8)
                         }
-                    }) {
-                        HStack(spacing: 6) {
-                            Image(systemName: justCopied ? "checkmark.circle.fill" : "doc.on.doc.fill")
-                                .foregroundColor(justCopied ? .green : .blue)
-                            Text(justCopied ? "Copied: \(otp)" : "Copy OTP (\(otp))")
-                                .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                                .foregroundColor(justCopied ? .green : .blue)
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(justCopied ? Color.green.opacity(0.15) : Color.blue.opacity(0.12))
-                        .cornerRadius(8)
+                        .buttonStyle(BorderlessButtonStyle())
                     }
-                    .buttonStyle(BorderlessButtonStyle())
+                    
+                    if let hash = message.smsRetrieverHash {
+                        Text("Hash: <\(hash)>")
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 5)
+                            .background(Color.secondary.opacity(0.1))
+                            .cornerRadius(6)
+                    }
                     
                     Spacer()
                 }
                 .padding(.top, 2)
             }
+
         }
         .padding(.vertical, 6)
     }
