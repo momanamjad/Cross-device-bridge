@@ -19,6 +19,9 @@ function extractOtp(text: string): string | null {
   );
   if (contextualMatch && contextualMatch[1]) {
     const candidate = contextualMatch[1];
+    if (candidate === "3737" || candidate === "111003737") {
+      return null;
+    }
     if (/\d/.test(candidate)) {
       return candidate;
     }
@@ -28,12 +31,20 @@ function extractOtp(text: string): string | null {
   if (/\b(otp|code|pin|verification|verify|password)\b/i.test(clean)) {
     const digitMatches = [...clean.matchAll(/\b([0-9]{4,8})\b/g)];
     for (const match of digitMatches) {
+      const candidate = match[1];
+      if (candidate === "3737" || candidate.includes("3737")) {
+        continue;
+      }
       const idx = match.index ?? 0;
+      const preceding = clean.slice(Math.max(0, idx - 15), idx).toLowerCase();
+      if (/call|dial|helpline|rabta|contact/.test(preceding)) {
+        continue;
+      }
       const following = clean.slice(idx + match[0].length, idx + match[0].length + 10).toLowerCase();
       if (/mb|gb|min|rs|paisa/.test(following)) {
         continue;
       }
-      return match[1];
+      return candidate;
     }
   }
 
@@ -51,6 +62,27 @@ export async function createSms(
     const body = smsSchema.parse(req.body);
     if (body.device_id !== device.externalId) {
       throw new HttpError(403, "device_id does not match token");
+    }
+
+    // Deduplication: prevent duplicate push within 10-second window
+    const tenSecondsAgo = new Date(Date.now() - 10000);
+    const existing = await prisma.message.findFirst({
+      where: {
+        deviceId: device.id,
+        sender: body.sender,
+        content: body.message,
+        createdAt: { gte: tenSecondsAgo },
+      },
+    });
+
+    if (existing) {
+      res.status(200).json({
+        status: "success",
+        message_id: existing.id,
+        received_at: existing.createdAt.toISOString(),
+        duplicate: true,
+      });
+      return;
     }
 
     const message = await prisma.message.create({
@@ -72,8 +104,8 @@ export async function createSms(
       timestamp: message.timestamp.toISOString(),
       synced: message.synced,
     };
+    // Emit only once directly to targeted device rooms (prevents double-notification)
     emitToDevice(device.id, "message:new", payload);
-    broadcastToAll("message:new", payload);
 
     res.status(201).json({
       status: "success",

@@ -69,6 +69,9 @@ struct SMSMessage: Identifiable, Codable, Equatable {
            let match = regex.firstMatch(in: cleanContent, range: NSRange(cleanContent.startIndex..., in: cleanContent)),
            let range = Range(match.range(at: 1), in: cleanContent) {
             let candidate = String(cleanContent[range])
+            if candidate == "3737" || candidate == "111003737" {
+                return nil
+            }
             // Ensure candidate contains at least one digit
             if candidate.rangeOfCharacter(from: .decimalDigits) != nil {
                 return candidate
@@ -84,6 +87,17 @@ struct SMSMessage: Identifiable, Codable, Equatable {
                 for match in matches {
                     if let range = Range(match.range(at: 1), in: cleanContent) {
                         let candidate = String(cleanContent[range])
+                        if candidate == "3737" || candidate.contains("3737") {
+                            continue
+                        }
+                        let startIdx = match.range.lowerBound
+                        let precedingLength = min(15, startIdx)
+                        if let precedingRange = Range(NSRange(location: startIdx - precedingLength, length: precedingLength), in: cleanContent) {
+                            let precedingText = String(cleanContent[precedingRange]).lowercased()
+                            if precedingText.contains("call") || precedingText.contains("dial") || precedingText.contains("helpline") || precedingText.contains("rabta") || precedingText.contains("contact") {
+                                continue
+                            }
+                        }
                         let endIdx = match.range.upperBound
                         let lengthRemaining = cleanContent.utf16.count - endIdx
                         let peekLength = min(10, max(0, lengthRemaining))

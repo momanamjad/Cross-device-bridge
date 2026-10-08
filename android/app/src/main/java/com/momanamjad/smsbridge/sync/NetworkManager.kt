@@ -33,6 +33,7 @@ object NetworkManager {
 
         // Instant push to backend so iPhone gets the SMS in real time
         kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch {
+            var pushSucceeded = false
             try {
                 val url = app.settings.backendUrl
                 val token = app.settings.apiToken
@@ -44,6 +45,7 @@ object NetworkManager {
                         val backendId = resp.body()?.messageId ?: ""
                         app.database.smsDao().markSynced(id, backendId)
                         logFile.appendText("[${java.util.Date()}] [Bridge SMS] Instant push SUCCESS: forwarded to iPhone (backendId=$backendId)\n")
+                        pushSucceeded = true
                     } else {
                         logFile.appendText("[${java.util.Date()}] [Bridge SMS] Instant push failed with HTTP ${resp.code()}\n")
                     }
@@ -51,9 +53,10 @@ object NetworkManager {
             } catch (e: Exception) {
                 Log.w(TAG, "Instant SMS push error: ${e.message}")
             }
+            if (!pushSucceeded) {
+                tryPushThenSchedule()
+            }
         }
-
-        tryPushThenSchedule()
     }
 
     suspend fun enqueueCall(caller: String, state: String, timestamp: Long) {
@@ -74,6 +77,7 @@ object NetworkManager {
 
         // Instant push to backend
         kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch {
+            var pushSucceeded = false
             try {
                 val url = app.settings.backendUrl
                 val token = app.settings.apiToken
@@ -84,14 +88,16 @@ object NetworkManager {
                     if (resp.isSuccessful) {
                         val backendId = resp.body()?.callId ?: ""
                         app.database.callDao().markSynced(id, backendId)
+                        pushSucceeded = true
                     }
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "Instant Call push error: ${e.message}")
             }
+            if (!pushSucceeded) {
+                tryPushThenSchedule()
+            }
         }
-
-        tryPushThenSchedule()
     }
 
     suspend fun syncPending(): Result<Unit> = withContext(Dispatchers.IO) {

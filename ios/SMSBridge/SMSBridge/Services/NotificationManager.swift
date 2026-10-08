@@ -25,6 +25,10 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         }
     }
     
+    // Cache to debounce duplicate notifications: key is "sender:content"
+    private var recentlyNotifiedFingerprints: [String: Date] = [:]
+    private let debounceInterval: TimeInterval = 10.0
+    
     private func setupCategories() {
         let copyAction = UNNotificationAction(
             identifier: "COPY_OTP_ACTION",
@@ -47,6 +51,17 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     }
     
     func postSMSNotification(message: SMSMessage) {
+        let fingerprint = "\(message.sender):\(message.content.trimmingCharacters(in: .whitespacesAndNewlines))"
+        let now = Date()
+        
+        // Clean up expired entries and check for duplicate within debounce window
+        recentlyNotifiedFingerprints = recentlyNotifiedFingerprints.filter { now.timeIntervalSince($0.value) < debounceInterval }
+        if let lastSent = recentlyNotifiedFingerprints[fingerprint], now.timeIntervalSince(lastSent) < debounceInterval {
+            AppLog("Debounced duplicate notification for \(message.sender)", tag: "NOTIF")
+            return
+        }
+        recentlyNotifiedFingerprints[fingerprint] = now
+        
         let content = UNMutableNotificationContent()
         content.sound = .default
         

@@ -17,10 +17,17 @@ class SmsReceiver : BroadcastReceiver() {
         val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent) ?: emptyArray()
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                for (sms in messages) {
-                    val sender = sms.displayOriginatingAddress?.trim().orEmpty().ifBlank { "unknown" }
-                    val body = sms.messageBody.orEmpty()
-                    NetworkManager.enqueueSms(sender, body, sms.timestampMillis)
+                if (messages.isNotEmpty()) {
+                    val grouped = messages.groupBy {
+                        it.displayOriginatingAddress?.trim().orEmpty().ifBlank { "unknown" }
+                    }
+                    for ((sender, partList) in grouped) {
+                        val fullBody = partList.joinToString(separator = "") { it.messageBody.orEmpty() }
+                        val timestamp = partList.firstOrNull()?.timestampMillis ?: System.currentTimeMillis()
+                        if (fullBody.isNotBlank()) {
+                            NetworkManager.enqueueSms(sender, fullBody, timestamp)
+                        }
+                    }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "failed to handle sms", e)

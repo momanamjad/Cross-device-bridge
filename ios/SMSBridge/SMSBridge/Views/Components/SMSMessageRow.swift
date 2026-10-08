@@ -74,6 +74,28 @@ struct SMSMessageRow: View {
                             .cornerRadius(6)
                     }
                     
+                    if let ussd = detectedUSSD {
+                        Button(action: {
+                            UIPasteboard.general.string = ussd
+                            let generator = UINotificationFeedbackGenerator()
+                            generator.notificationOccurred(.success)
+                        }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "phone.arrow.up.right.fill")
+                                    .font(.caption2)
+                                    .foregroundColor(.orange)
+                                Text("Dial: \(ussd)")
+                                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                                    .foregroundColor(.orange)
+                            }
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 5)
+                            .background(Color.orange.opacity(0.12))
+                            .cornerRadius(6)
+                        }
+                        .buttonStyle(BorderlessButtonStyle())
+                    }
+                    
                     Spacer()
                 }
                 .padding(.top, 2)
@@ -81,6 +103,16 @@ struct SMSMessageRow: View {
 
         }
         .padding(.vertical, 6)
+    }
+    
+    private var detectedUSSD: String? {
+        let pattern = #"\*([0-9]{3,5})#"#
+        if let regex = try? NSRegularExpression(pattern: pattern),
+           let match = regex.firstMatch(in: message.content, range: NSRange(message.content.startIndex..., in: message.content)),
+           let range = Range(match.range, in: message.content) {
+            return String(message.content[range])
+        }
+        return nil
     }
     
     private func formattedDate(_ date: Date) -> String {

@@ -19,6 +19,9 @@ class CallViewModel: ObservableObject {
     private let webrtc = WebRTCService()
     
     init() {
+        // 1. Instant offline load from local disk cache
+        self.callHistory = LocalStore.shared.loadCalls()
+        
         setupWebSocketListeners()
         setupWebRTCListeners()
         
@@ -250,6 +253,7 @@ class CallViewModel: ObservableObject {
                 isIncoming: callInfo.isIncoming
             )
             callHistory.insert(callRecord, at: 0)
+            LocalStore.shared.saveCalls(callHistory)
         }
         
         CallKitManager.shared.endCall(id: callId)
@@ -298,6 +302,7 @@ class CallViewModel: ObservableObject {
                 
                 DispatchQueue.main.async {
                     self?.callHistory = calls
+                    LocalStore.shared.saveCalls(calls)
                     print("✅ Call history fetched: \(calls.count) calls")
                 }
             } catch {
