@@ -209,7 +209,7 @@ export class PCAudioBridgeService {
         this.bridgeProcess = spawn(this.exePath, args, { stdio: ["pipe", "pipe", "pipe"] });
 
         this.bridgeProcess.stdout?.on("data", (d) => {
-          logger.debug(`[AudioBridge-Out] ${d.toString().trim()}`);
+          logger.info(`[AudioBridge-Out] ${d.toString().trim()}`);
         });
 
         this.bridgeProcess.stderr?.on("data", (d) => {

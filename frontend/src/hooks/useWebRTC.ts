@@ -336,9 +336,6 @@ export function useWebRTC() {
     const nextMute = !isMuted;
     setIsMuted(nextMute);
     voiceBridgeServiceInstance?.setMute(nextMute);
-    try {
-      const webrtc = getWebRtcService();
-    } catch {}
     // Standard track toggling:
     const stream = (webrtcServiceInstance as any)?.localStream as MediaStream | null;
     stream?.getAudioTracks().forEach((track) => {

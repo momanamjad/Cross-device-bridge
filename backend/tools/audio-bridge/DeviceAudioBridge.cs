@@ -15,16 +15,8 @@ namespace DeviceBridgeAudio
         private const int MMSYSERR_NOERROR = 0;
         private const int CALLBACK_FUNCTION = 0x00030000;
         private const int WAVE_FORMAT_PCM = 1;
-        private const int WHDR_DONE = 0x00000001;
-        private const int WHDR_PREPARED = 0x00000002;
-
         private const int WIM_DATA = 0x3C0;
-        private const int WIM_OPEN = 0x3BE;
-        private const int WIM_CLOSE = 0x3BF;
-
         private const int WOM_DONE = 0x3BD;
-        private const int WOM_OPEN = 0x3BB;
-        private const int WOM_CLOSE = 0x3BC;
 
         [StructLayout(LayoutKind.Sequential)]
         public struct WAVEFORMATEX
@@ -91,13 +83,13 @@ namespace DeviceBridgeAudio
         public static extern int waveInOpen(out IntPtr phwi, int uDeviceID, ref WAVEFORMATEX pwfx, WaveInProc dwCallback, IntPtr dwInstance, int fdwOpen);
 
         [DllImport("winmm.dll")]
-        public static extern int waveInPrepareHeader(IntPtr hwi, ref WAVEHDR pwh, int cbwh);
+        public static extern int waveInPrepareHeader(IntPtr hwi, IntPtr pwh, int cbwh);
 
         [DllImport("winmm.dll")]
-        public static extern int waveInUnprepareHeader(IntPtr hwi, ref WAVEHDR pwh, int cbwh);
+        public static extern int waveInUnprepareHeader(IntPtr hwi, IntPtr pwh, int cbwh);
 
         [DllImport("winmm.dll")]
-        public static extern int waveInAddBuffer(IntPtr hwi, ref WAVEHDR pwh, int cbwh);
+        public static extern int waveInAddBuffer(IntPtr hwi, IntPtr pwh, int cbwh);
 
         [DllImport("winmm.dll")]
         public static extern int waveInStart(IntPtr hwi);
@@ -121,13 +113,13 @@ namespace DeviceBridgeAudio
         public static extern int waveOutOpen(out IntPtr phwo, int uDeviceID, ref WAVEFORMATEX pwfx, WaveOutProc dwCallback, IntPtr dwInstance, int fdwOpen);
 
         [DllImport("winmm.dll")]
-        public static extern int waveOutPrepareHeader(IntPtr hwo, ref WAVEHDR pwh, int cbwh);
+        public static extern int waveOutPrepareHeader(IntPtr hwo, IntPtr pwh, int cbwh);
 
         [DllImport("winmm.dll")]
-        public static extern int waveOutUnprepareHeader(IntPtr hwo, ref WAVEHDR pwh, int cbwh);
+        public static extern int waveOutUnprepareHeader(IntPtr hwo, IntPtr pwh, int cbwh);
 
         [DllImport("winmm.dll")]
-        public static extern int waveOutWrite(IntPtr hwo, ref WAVEHDR pwh, int cbwh);
+        public static extern int waveOutWrite(IntPtr hwo, IntPtr pwh, int cbwh);
 
         [DllImport("winmm.dll")]
         public static extern int waveOutReset(IntPtr hwo);
@@ -141,7 +133,7 @@ namespace DeviceBridgeAudio
         private const int BITS_PER_SAMPLE = 16;
         private const int CHANNELS = 1;
         private const int BUFFER_COUNT = 4;
-        private const int BUFFER_MS = 40; // 40ms packets
+        private const int BUFFER_MS = 40;
         private const int BUFFER_SIZE = (SAMPLE_RATE * (BITS_PER_SAMPLE / 8) * CHANNELS * BUFFER_MS) / 1000; // 1280 bytes
 
         private static IntPtr hWaveIn = IntPtr.Zero;
@@ -149,12 +141,12 @@ namespace DeviceBridgeAudio
         private static WaveInProc waveInCallback;
         private static WaveOutProc waveOutCallback;
 
-        private static WAVEHDR[] inHeaders;
+        private static IntPtr[] inHeaders;
         private static IntPtr[] inBuffers;
 
         private static TcpClient tcpClient = null;
         private static NetworkStream netStream = null;
-        private static bool isRunning = true;
+        private static volatile bool isRunning = true;
 
         static void Main(string[] args)
         {
@@ -268,7 +260,6 @@ namespace DeviceBridgeAudio
                         byte[] buffer = new byte[hdr.dwBytesRecorded];
                         Marshal.Copy(hdr.lpData, buffer, 0, (int)hdr.dwBytesRecorded);
 
-                        // Calculate RMS volume level
                         double sum = 0;
                         int sampleCount = buffer.Length / 2;
                         for (int i = 0; i < buffer.Length; i += 2)
@@ -286,8 +277,10 @@ namespace DeviceBridgeAudio
                             rms);
                     }
 
-                    // Re-queue buffer
-                    waveInAddBuffer(hwi, ref hdr, Marshal.SizeOf(hdr));
+                    if (isRunning)
+                    {
+                        waveInAddBuffer(hwi, dwParam1, Marshal.SizeOf(typeof(WAVEHDR)));
+                    }
                 }
             };
 
@@ -304,10 +297,7 @@ namespace DeviceBridgeAudio
             Console.WriteLine("\nListening... Press Ctrl+C or Enter to stop.");
             Console.ReadLine();
 
-            isRunning = false;
-            waveInStop(hWaveIn);
-            waveInReset(hWaveIn);
-            waveInClose(hWaveIn);
+            Cleanup();
             Console.WriteLine("\nTest stopped.");
         }
 
@@ -330,19 +320,19 @@ namespace DeviceBridgeAudio
 
             WAVEFORMATEX wfx = CreateWaveFormat();
 
-            // Setup audio output (if requested)
             if (outDev >= 0)
             {
                 waveOutCallback = (hwo, uMsg, dwInstance, dwParam1, dwParam2) =>
                 {
-                    if (uMsg == WOM_DONE)
+                    if (uMsg == WOM_DONE && dwParam1 != IntPtr.Zero)
                     {
+                        waveOutUnprepareHeader(hwo, dwParam1, Marshal.SizeOf(typeof(WAVEHDR)));
                         WAVEHDR hdr = (WAVEHDR)Marshal.PtrToStructure(dwParam1, typeof(WAVEHDR));
-                        waveOutUnprepareHeader(hwo, ref hdr, Marshal.SizeOf(hdr));
                         if (hdr.lpData != IntPtr.Zero)
                         {
                             Marshal.FreeHGlobal(hdr.lpData);
                         }
+                        Marshal.FreeHGlobal(dwParam1);
                     }
                 };
 
@@ -354,14 +344,12 @@ namespace DeviceBridgeAudio
                 else
                 {
                     Console.WriteLine("Playback output opened on device: " + outDev);
-                    // Start thread to read from TCP stream and write to waveOut
                     Thread outThread = new Thread(PlaybackWorker);
                     outThread.IsBackground = true;
                     outThread.Start();
                 }
             }
 
-            // Setup audio input (if requested)
             if (inDev >= 0)
             {
                 waveInCallback = (hwi, uMsg, dwInstance, dwParam1, dwParam2) =>
@@ -376,7 +364,6 @@ namespace DeviceBridgeAudio
 
                             try
                             {
-                                // Write 2-byte length prefix + PCM payload
                                 byte[] lenBytes = BitConverter.GetBytes((ushort)buffer.Length);
                                 netStream.Write(lenBytes, 0, 2);
                                 netStream.Write(buffer, 0, buffer.Length);
@@ -389,7 +376,7 @@ namespace DeviceBridgeAudio
 
                         if (isRunning)
                         {
-                            waveInAddBuffer(hwi, ref hdr, Marshal.SizeOf(hdr));
+                            waveInAddBuffer(hwi, dwParam1, Marshal.SizeOf(typeof(WAVEHDR)));
                         }
                     }
                 };
@@ -413,9 +400,9 @@ namespace DeviceBridgeAudio
                 Cleanup();
             };
 
-            while (isRunning && tcpClient.Connected)
+            while (isRunning && tcpClient != null && tcpClient.Connected)
             {
-                Thread.Sleep(200);
+                Thread.Sleep(100);
             }
 
             Cleanup();
@@ -438,8 +425,7 @@ namespace DeviceBridgeAudio
                     read = ReadExact(netStream, pcmBuf, 0, len);
                     if (read < len) break;
 
-                    // Play chunk
-                    if (hWaveOut != IntPtr.Zero)
+                    if (hWaveOut != IntPtr.Zero && isRunning)
                     {
                         IntPtr pData = Marshal.AllocHGlobal(len);
                         Marshal.Copy(pcmBuf, 0, pData, len);
@@ -449,8 +435,11 @@ namespace DeviceBridgeAudio
                         hdr.dwBufferLength = len;
                         hdr.dwFlags = 0;
 
-                        waveOutPrepareHeader(hWaveOut, ref hdr, Marshal.SizeOf(hdr));
-                        waveOutWrite(hWaveOut, ref hdr, Marshal.SizeOf(hdr));
+                        IntPtr pHdr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(WAVEHDR)));
+                        Marshal.StructureToPtr(hdr, pHdr, false);
+
+                        waveOutPrepareHeader(hWaveOut, pHdr, Marshal.SizeOf(typeof(WAVEHDR)));
+                        waveOutWrite(hWaveOut, pHdr, Marshal.SizeOf(typeof(WAVEHDR)));
                     }
                 }
                 catch
@@ -487,19 +476,23 @@ namespace DeviceBridgeAudio
 
         private static void InitInputBuffers()
         {
-            inHeaders = new WAVEHDR[BUFFER_COUNT];
+            inHeaders = new IntPtr[BUFFER_COUNT];
             inBuffers = new IntPtr[BUFFER_COUNT];
 
             for (int i = 0; i < BUFFER_COUNT; i++)
             {
                 inBuffers[i] = Marshal.AllocHGlobal(BUFFER_SIZE);
-                inHeaders[i] = new WAVEHDR();
-                inHeaders[i].lpData = inBuffers[i];
-                inHeaders[i].dwBufferLength = BUFFER_SIZE;
-                inHeaders[i].dwFlags = 0;
 
-                waveInPrepareHeader(hWaveIn, ref inHeaders[i], Marshal.SizeOf(inHeaders[i]));
-                waveInAddBuffer(hWaveIn, ref inHeaders[i], Marshal.SizeOf(inHeaders[i]));
+                WAVEHDR hdr = new WAVEHDR();
+                hdr.lpData = inBuffers[i];
+                hdr.dwBufferLength = BUFFER_SIZE;
+                hdr.dwFlags = 0;
+
+                inHeaders[i] = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(WAVEHDR)));
+                Marshal.StructureToPtr(hdr, inHeaders[i], false);
+
+                waveInPrepareHeader(hWaveIn, inHeaders[i], Marshal.SizeOf(typeof(WAVEHDR)));
+                waveInAddBuffer(hWaveIn, inHeaders[i], Marshal.SizeOf(typeof(WAVEHDR)));
             }
         }
 
@@ -514,9 +507,14 @@ namespace DeviceBridgeAudio
                     waveInReset(hWaveIn);
                     for (int i = 0; i < BUFFER_COUNT; i++)
                     {
+                        if (inHeaders != null && inHeaders[i] != IntPtr.Zero)
+                        {
+                            waveInUnprepareHeader(hWaveIn, inHeaders[i], Marshal.SizeOf(typeof(WAVEHDR)));
+                            Marshal.FreeHGlobal(inHeaders[i]);
+                            inHeaders[i] = IntPtr.Zero;
+                        }
                         if (inBuffers != null && inBuffers[i] != IntPtr.Zero)
                         {
-                            waveInUnprepareHeader(hWaveIn, ref inHeaders[i], Marshal.SizeOf(inHeaders[i]));
                             Marshal.FreeHGlobal(inBuffers[i]);
                             inBuffers[i] = IntPtr.Zero;
                         }

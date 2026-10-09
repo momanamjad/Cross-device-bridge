@@ -23,6 +23,18 @@
       "createdAt": "2026-09-16T11:37:55.079Z",
       "updatedAt": "2026-09-16T11:40:05.625Z",
       "lastSeen": "2026-09-16T11:40:05.623Z"
+    },
+    {
+      "id": "3mp4q4bmv0vlvd3",
+      "externalId": "test_device_pc",
+      "deviceName": "Test PC",
+      "deviceType": "windows",
+      "osVersion": "11",
+      "tokenHash": "9066b6ff1821fe347c839916cfdbc6e2cc82d0e24853f1ad4fa94760212121f6",
+      "isActive": true,
+      "createdAt": "2026-10-09T11:22:31.047Z",
+      "updatedAt": "2026-10-09T11:25:45.816Z",
+      "lastSeen": "2026-10-09T11:25:45.815Z"
     }
   ],
   "messages": [
@@ -85,6 +97,51 @@
       "connected_successfully": false,
       "created_at": "2026-09-16T11:40:04.106Z",
       "updated_at": "2026-09-16T11:40:04.799Z"
+    },
+    {
+      "id": "call_test_1791544951795",
+      "initiator_device": "realme_c3_1",
+      "initiator_number": null,
+      "receiver_number": "+923001234567",
+      "state": "CONNECTING",
+      "is_incoming": true,
+      "started_at": "2026-10-09T11:22:31.795Z",
+      "ended_at": null,
+      "duration_seconds": 0,
+      "call_sid": null,
+      "connected_successfully": false,
+      "created_at": "2026-10-09T11:22:31.796Z",
+      "updated_at": "2026-10-09T11:22:31.847Z"
+    },
+    {
+      "id": "call_test_1791545051789",
+      "initiator_device": "realme_c3_1",
+      "initiator_number": null,
+      "receiver_number": "+923001234567",
+      "state": "CONNECTING",
+      "is_incoming": true,
+      "started_at": "2026-10-09T11:24:11.789Z",
+      "ended_at": null,
+      "duration_seconds": 0,
+      "call_sid": null,
+      "connected_successfully": false,
+      "created_at": "2026-10-09T11:24:11.791Z",
+      "updated_at": "2026-10-09T11:24:11.892Z"
+    },
+    {
+      "id": "call_test_1791545146353",
+      "initiator_device": "realme_c3_1",
+      "initiator_number": null,
+      "receiver_number": "+923001234567",
+      "state": "ENDED",
+      "is_incoming": true,
+      "started_at": "2026-10-09T11:25:46.354Z",
+      "ended_at": "2026-10-09T11:25:48.269Z",
+      "duration_seconds": 2,
+      "call_sid": null,
+      "connected_successfully": false,
+      "created_at": "2026-10-09T11:25:46.356Z",
+      "updated_at": "2026-10-09T11:25:48.270Z"
     }
   ],
   "iceCandidates": []
