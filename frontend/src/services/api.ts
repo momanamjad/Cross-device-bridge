@@ -20,5 +20,11 @@ export function createApi(baseURL: string, token: string) {
       }),
     confirmMessage: (id: string) => client.post(`/api/messages/${id}/confirm`),
     confirmCall: (id: string) => client.post(`/api/calls/${id}/confirm`),
+    getAudioMode: () => client.get<{ mode: string; activeType: string }>("/api/audio/mode"),
+    setAudioMode: (mode: "auto" | "pc" | "esp32") => client.post("/api/audio/mode", { mode }),
+    getAudioDevices: () => client.get("/api/audio/devices"),
+    selectAudioDevices: (input_id: number, output_id: number) =>
+      client.post("/api/audio/select", { input_id, output_id }),
+    getAudioStats: () => client.get("/api/audio/stats"),
   };
 }

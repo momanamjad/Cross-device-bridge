@@ -106,8 +106,21 @@ export class ESP32VoiceBridgeService {
     };
   }
 
-  public static stop() {
+  public static isEsp32Connected(): boolean {
+    return this.esp32RemoteAddr !== null;
+  }
+
+  public static reset() {
+    this.esp32RemoteAddr = null;
     this.activeCallId = null;
+    this.downlinkPackets = 0;
+    this.uplinkPackets = 0;
+    this.bytesReceived = 0;
+    this.bytesSent = 0;
+  }
+
+  public static stop() {
+    this.reset();
     if (this.udpSocket) {
       try {
         this.udpSocket.close();

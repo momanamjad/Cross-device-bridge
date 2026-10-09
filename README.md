@@ -164,17 +164,24 @@ WebRTC voice calls are routed signaling-only through the Node.js backend. Direct
 
 ---
 
-# Dual-Strategy Voice Call Audio Bridge
+---
+
+# Unified Voice Call Audio Bridge (Dual-Mode Support)
 
 ## The Core Technical Challenge
 On Android 10+ (including Realme UI / ColorOS on Realme C3), the operating system strictly isolates cellular modem baseband audio from third-party applications. Public Android APIs (`VOICE_DOWNLINK` / `VOICE_UPLINK` / `VOICE_CALL`) reject recording with `SecurityException` unless an app is signed with the platform manufacturer's private system key or has root access.
 
-To achieve **full-duplex, two-way cellular voice transfer** (listening to the caller and speaking back through the iPhone microphone) without rooting the phone, Device Bridge provides two distinct strategies:
+To achieve **full-duplex, two-way cellular voice transfer** (listening to the caller and speaking back through the iPhone microphone) without rooting the phone, Device Bridge provides **two complementary modes in this single codebase**:
+
+1. **Option 1 (PC Bluetooth Loopback):** Runs on your host Windows PC using native audio APIs (`winmm.dll`). Zero extra hardware required.
+2. **Option 2 (ESP-32S Hardware Relay):** Runs headlessly on a $3 ESP-32S microcontroller plugged into any USB phone charger anywhere in your home.
+
+You can switch modes anytime via the **iPhone PWA Settings screen** (`Auto Detect`, `ESP-32S HW`, or `PC Bluetooth`), or let the system auto-detect whichever is active!
 
 ---
 
-## Strategy 1: PC-Native Bluetooth Bridge (Branch: `voice-bridge-no-esp32`)
-> **Ideal when:** Your Windows host PC is always on, and you want zero extra hardware purchases.
+## Mode 1: PC-Native Bluetooth Bridge
+> **Best for:** When your Windows PC is nearby, and you want zero extra hardware purchases.
 
 ### Architecture
 ```
@@ -187,40 +194,38 @@ To achieve **full-duplex, two-way cellular voice transfer** (listening to the ca
 [ Windows PC (Intel Bluetooth) ]
     │ (WinMM C# Engine: device-audio-bridge.exe)
     ▼
-[ Node.js Backend ]
+[ Node.js Backend (VoiceBridgeManager) ]
     │ (Socket.io 16kHz PCM Frames)
     ▼
 [ iPhone Safari PWA (Web Audio API) ]
 ```
 
-### How to Test Option 1:
-1. Switch to the PC branch:
-   ```bash
-   git checkout voice-bridge-no-esp32
-   ```
-2. Pair your Android phone to Windows PC:
+### Quick Setup:
+1. Pair your Android phone to Windows PC:
    * **Settings → Bluetooth & devices → Add device**.
    * Pair the Realme C3 and verify Windows sees it as a **"Hands-Free AG Audio"** device under Sound Settings.
-3. Start Backend & Frontend:
+2. Start the Backend & Frontend:
    ```bash
-   # Terminal 1
+   # Terminal 1: Backend
    cd backend && npm run dev
 
-   # Terminal 2
+   # Terminal 2: Frontend
    cd frontend && npm run dev
    ```
-4. In iPhone PWA Settings:
-   * Under **Voice Bridge (PC Bluetooth)**, tap **Scan Devices**, pick the phone Bluetooth input & output, and tap **Apply Audio Routing**.
-5. Automated verification command:
+3. In iPhone PWA Settings:
+   * Set mode to **PC Bluetooth** (or **Auto Detect**).
+   * Tap **Scan PC Devices**, select your phone's Bluetooth input and output, and tap **Apply PC Audio Routing**.
+4. Automated verification test:
    ```bash
    cd backend
    npx tsx test-voice-bridge.ts
    ```
+   *(5/5 automated tests pass)*
 
 ---
 
-## Strategy 2: ESP-32S Standalone Hardware Bridge (Branch: `voice-bridge-esp32`)
-> **Ideal when:** You want a dedicated, headless 24/7 standalone hardware box that does not depend on your PC's Bluetooth adapter.
+## Mode 2: ESP-32S Standalone Hardware Bridge
+> **Best for:** When you want a dedicated, headless 24/7 standalone hardware box that does not depend on your PC's Bluetooth adapter.
 
 ### Architecture
 ```
@@ -233,7 +238,7 @@ To achieve **full-duplex, two-way cellular voice transfer** (listening to the ca
 [ ESP-32S Board (Ai-Thinker / ESP-WROOM-32) ]
     │ (Wi-Fi 802.11b/g/n UDP Socket / Port 4050)
     ▼
-[ Node.js Backend (esp32VoiceBridge.ts) ]
+[ Node.js Backend (VoiceBridgeManager) ]
     │ (Socket.io Realtime PCM Frames)
     ▼
 [ iPhone Safari PWA (Web Audio API) ]
@@ -244,45 +249,21 @@ To achieve **full-duplex, two-way cellular voice transfer** (listening to the ca
   * *Important:* Must be classic ESP32 with Dual-Mode Bluetooth (BR/EDR Classic + BLE). Single-core or BLE-only variants (ESP32-S2, ESP32-S3, ESP32-C3) do not support the Bluetooth Classic Hands-Free Profile (HFP).
 * **Power:** Any standard 5V Micro-USB cable and charger.
 
-### Firmware Setup & Flashing
-The firmware is located in `firmware/esp32-voice-bridge/`.
+### Firmware Flashing (Beginner-Friendly)
+A step-by-step beginner guide with download links for VS Code, drivers, and PlatformIO is available in:  
+👉 **[firmware/esp32-voice-bridge/README.md](firmware/esp32-voice-bridge/README.md)**
 
-1. **Configure Wi-Fi and Backend IP:**
-   Open `firmware/esp32-voice-bridge/include/config.h`:
-   ```c
-   #define BRIDGE_WIFI_SSID        "Your_WiFi_SSID"
-   #define BRIDGE_WIFI_PASS        "Your_WiFi_Password"
-   #define BACKEND_HOST_IP         "192.168.1.100"      // Your PC's LAN IP
-   #define BACKEND_UDP_AUDIO_PORT  4050
-   ```
-
-2. **Flash via PlatformIO (VS Code):**
-   * Connect ESP-32S via USB.
-   * Open folder `firmware/esp32-voice-bridge` in VS Code with PlatformIO.
-   * Run:
-     ```bash
-     pio run --target upload
-     pio device monitor
-     ```
-
-3. **Or Flash via ESP-IDF CLI:**
+Quick steps:
+1. Open `firmware/esp32-voice-bridge/include/config.h` and enter your 2.4 GHz Wi-Fi SSID, password, and PC IP.
+2. Open folder `firmware/esp32-voice-bridge` in VS Code with PlatformIO.
+3. Plug in the ESP-32S via USB and click the **Upload** arrow (`➔`). *(If `Connecting...` appears, hold the board's **BOOT** button for 2 seconds).*
+4. On your Realme C3, open **Bluetooth Settings** and pair with **`DeviceBridge-Voice`** (enable Phone Calls permission).
+5. In iPhone PWA Settings, set mode to **ESP-32S HW** (or leave on **Auto Detect**).
+6. Automated verification test:
    ```bash
-   cd firmware/esp32-voice-bridge
-   idf.py set-target esp32
-   idf.py build flash monitor
+   cd backend
+   npx tsx test-esp32-bridge.ts
    ```
+   *(4/4 automated tests pass)*
 
-### Pairing with Android Phone
-1. Once flashed, the ESP32 broadcasts Bluetooth Classic as **`DeviceBridge-Voice`**.
-2. On your Realme C3, open **Settings → Bluetooth**, search for devices, and tap **DeviceBridge-Voice** to pair.
-3. Grant permission for Phone Calls / Audio.
-4. When any cellular phone call is answered, Android routes caller audio to the ESP32, which relays it over UDP port 4050 to the backend and down to your iPhone PWA in real time!
-
-### Automated Verification
-To verify the UDP listener, call state mapping, and bidirectional audio streaming without hardware:
-```bash
-cd backend
-npx tsx test-esp32-bridge.ts
-```
-Expected output: `ALL 4/4 ESP32 VOICE BRIDGE TESTS PASSED!`.
 

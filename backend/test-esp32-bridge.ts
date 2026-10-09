@@ -1,5 +1,6 @@
 const realExit = process.exit.bind(process);
 process.env.TEST_RUNNER = "true";
+process.env.VOICE_BRIDGE_MODE = "esp32";
 
 import assert from "assert";
 import dgram from "dgram";
@@ -11,6 +12,7 @@ import { prisma } from "./src/config/database";
 import { hashToken } from "./src/lib/crypto";
 import { WebRTCSignalServer } from "./src/services/webrtcSignal";
 import { ESP32VoiceBridgeService } from "./src/services/esp32VoiceBridge";
+import { VoiceBridgeManager } from "./src/services/voiceBridgeManager";
 
 async function runTests() {
   console.log("==================================================");
@@ -22,7 +24,7 @@ async function runTests() {
   const app = createApp();
   const httpServer = createServer(app);
   const io = initSocket(httpServer);
-  ESP32VoiceBridgeService.initialize(io);
+  VoiceBridgeManager.setMode("esp32");
 
   await new Promise<void>((resolve) => httpServer.listen(0, resolve));
   const testPort = (httpServer.address() as any).port;

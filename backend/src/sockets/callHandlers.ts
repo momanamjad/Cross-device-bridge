@@ -1,7 +1,7 @@
 import { Server, Socket } from "socket.io";
 import { z } from "zod";
 import { WebRTCSignalServer } from "../services/webrtcSignal";
-import { ESP32VoiceBridgeService } from "../services/esp32VoiceBridge";
+import { VoiceBridgeManager } from "../services/voiceBridgeManager";
 import { winstonLogger as logger } from "../lib/winstonLogger";
 import { decryptPayload } from "../lib/crypto";
 import { env } from "../config/environment";
@@ -102,8 +102,8 @@ export function registerCallHandlers(io: Server, socket: Socket) {
       const data = callAcceptSchema.parse(unwrapPayload(payload));
       await socket.join(`call_${data.call_id}`);
       await WebRTCSignalServer.handleAcceptCall(data.call_id, fromDevice);
-      // Route voice via ESP-32S UDP relay
-      ESP32VoiceBridgeService.setActiveCall(data.call_id);
+      // Route voice dynamically (ESP-32S or PC Bluetooth)
+      await VoiceBridgeManager.onCallAccept(data.call_id);
     } catch (err: any) {
       logger.error(`Error in call:accept handler: ${err.message || err}`, { err });
       socket.emit("call:error", { call_id: "", error_message: err.message || "Invalid payload" });
@@ -116,7 +116,7 @@ export function registerCallHandlers(io: Server, socket: Socket) {
       const data = callRejectSchema.parse(unwrapPayload(payload));
       await socket.join(`call_${data.call_id}`);
       await WebRTCSignalServer.handleRejectCall(data.call_id, fromDevice);
-      ESP32VoiceBridgeService.setActiveCall(null);
+      VoiceBridgeManager.onCallEnd();
     } catch (err: any) {
       logger.error(`Error in call:reject/rejected handler: ${err.message || err}`, { err });
       socket.emit("call:error", { call_id: "", error_message: err.message || "Invalid payload" });
@@ -144,7 +144,7 @@ export function registerCallHandlers(io: Server, socket: Socket) {
       const data = callHangupSchema.parse(unwrapPayload(payload));
       await socket.join(`call_${data.call_id}`);
       await WebRTCSignalServer.handleCallEnd(data.call_id, data.duration);
-      ESP32VoiceBridgeService.setActiveCall(null);
+      VoiceBridgeManager.onCallEnd();
     } catch (err: any) {
       logger.error(`Error in call:hangup handler: ${err.message || err}`, { err });
       socket.emit("call:error", { call_id: "", error_message: err.message || "Invalid payload" });
@@ -155,7 +155,7 @@ export function registerCallHandlers(io: Server, socket: Socket) {
     try {
       const data = callAudioUplinkSchema.parse(unwrapPayload(payload));
       const pcmBuffer = Buffer.from(data.pcm, "base64");
-      ESP32VoiceBridgeService.sendUplinkChunk(data.call_id, pcmBuffer);
+      VoiceBridgeManager.sendUplinkChunk(data.call_id, pcmBuffer);
     } catch (_) {}
   });
 
