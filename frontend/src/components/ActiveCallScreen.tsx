@@ -8,6 +8,7 @@ interface ActiveCallScreenProps {
   isSpeaker: boolean;
   onSpeakerToggle: () => void;
   onHangup: () => void;
+  audioLevel?: number;
 }
 
 export function ActiveCallScreen({
@@ -17,6 +18,7 @@ export function ActiveCallScreen({
   isSpeaker,
   onSpeakerToggle,
   onHangup,
+  audioLevel = 0,
 }: ActiveCallScreenProps) {
   const [elapsed, setElapsed] = useState(0);
 
@@ -53,7 +55,7 @@ export function ActiveCallScreen({
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-mint opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-mint" />
           </span>
-          {call.status === "connected" ? "Direct P2P Audio Active" : "Connecting SIM Relay..."}
+          {call.status === "connected" ? "Voice Bridge: PC Bluetooth Loopback Active" : "Connecting SIM Relay..."}
         </div>
 
         <h2 className="mt-8 text-3xl font-bold text-white">
@@ -70,17 +72,20 @@ export function ActiveCallScreen({
 
       {/* Visualizer effect */}
       <div className="flex items-center gap-1.5 h-12 my-6">
-        {[1, 2, 3, 4, 5, 4, 3, 2, 1].map((height, i) => (
-          <div
-            key={i}
-            style={{
-              height: call.status === "connected" && !isMuted ? `${height * 6 + 4}px` : "4px",
-            }}
-            className={`w-1 rounded-full bg-mint transition-all duration-150 ${
-              call.status === "connected" && !isMuted ? "animate-pulse" : ""
-            }`}
-          />
-        ))}
+        {[1, 2, 3, 4, 5, 4, 3, 2, 1].map((weight, i) => {
+          const dynamicHeight = call.status === "connected" && !isMuted
+            ? Math.max(6, Math.min(48, 6 + audioLevel * weight * 10 + (Math.sin(Date.now() / 200 + i) * 3)))
+            : 4;
+          return (
+            <div
+              key={i}
+              style={{ height: `${dynamicHeight}px` }}
+              className={`w-1.5 rounded-full transition-all duration-75 ${
+                audioLevel > 0.05 ? "bg-mint shadow-sm shadow-mint/50" : "bg-slate-600"
+              }`}
+            />
+          );
+        })}
       </div>
 
       {/* Control Buttons Panel */}

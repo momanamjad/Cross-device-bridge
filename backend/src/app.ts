@@ -11,6 +11,7 @@ import { callsRouter, messagesRouter } from "./routes/messages";
 import { webrtcCallsRouter } from "./routes/webrtcCalls";
 import { encryptRestResponse } from "./middleware/encryption";
 import { filesRouter } from "./routes/files";
+import { audioRouter } from "./routes/audioRoutes";
 import path from "path";
 
 export function createApp() {
@@ -29,6 +30,7 @@ export function createApp() {
   app.use("/api/messages", encryptRestResponse, messagesRouter);
   app.use("/api/calls", encryptRestResponse, webrtcCallsRouter);
   app.use("/api/calls", encryptRestResponse, callsRouter);
+  app.use("/api/audio", encryptRestResponse, audioRouter);
   const uploadDir = process.env.STORAGE_DIR ? path.join(process.env.STORAGE_DIR, "uploads") : path.join(process.cwd(), "uploads");
   try {
     if (!path.isAbsolute(uploadDir) || !require("fs").existsSync(uploadDir)) {

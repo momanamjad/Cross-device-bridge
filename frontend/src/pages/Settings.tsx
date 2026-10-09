@@ -13,6 +13,10 @@ export function SettingsPage() {
   const [urlDraft, setUrlDraft] = useState(apiUrl);
   const [tokenDraft, setTokenDraft] = useState(token);
   const [status, setStatus] = useState("");
+  const [audioDevices, setAudioDevices] = useState<{ inputs: { id: number; name: string }[]; outputs: { id: number; name: string }[] } | null>(null);
+  const [selectedIn, setSelectedIn] = useState<number | "">("");
+  const [selectedOut, setSelectedOut] = useState<number | "">("");
+  const [audioLoading, setAudioLoading] = useState(false);
 
   async function testConnection() {
     try {
@@ -21,6 +25,33 @@ export function SettingsPage() {
       setStatus(`Health: ${res.data.status} / db ${res.data.database ?? "?"}`);
     } catch (err) {
       setStatus(err instanceof Error ? err.message : "Connection failed");
+    }
+  }
+
+  async function fetchAudioDevices() {
+    setAudioLoading(true);
+    try {
+      const api = createApi(urlDraft.replace(/\/$/, ""), tokenDraft);
+      const res = await api.getAudioDevices();
+      setAudioDevices(res.data.devices);
+      if (res.data.selected?.input) setSelectedIn(res.data.selected.input.id);
+      if (res.data.selected?.output) setSelectedOut(res.data.selected.output.id);
+      setStatus("Loaded PC audio devices.");
+    } catch (err: any) {
+      setStatus(err?.response?.data?.message || err.message || "Failed to load audio devices");
+    } finally {
+      setAudioLoading(false);
+    }
+  }
+
+  async function saveAudioDevices() {
+    if (selectedIn === "" || selectedOut === "") return;
+    try {
+      const api = createApi(urlDraft.replace(/\/$/, ""), tokenDraft);
+      await api.selectAudioDevices(Number(selectedIn), Number(selectedOut));
+      setStatus("Saved PC Voice Bridge audio routing.");
+    } catch (err: any) {
+      setStatus(err?.response?.data?.message || err.message || "Failed to save audio devices");
     }
   }
 
@@ -80,6 +111,67 @@ export function SettingsPage() {
       >
         Test connection
       </button>
+
+      {/* Voice Bridge Audio Settings */}
+      <div className="rounded-2xl border border-white/10 bg-panel/70 p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-white">Voice Bridge (PC Bluetooth)</h3>
+          <button
+            type="button"
+            onClick={() => void fetchAudioDevices()}
+            disabled={audioLoading}
+            className="text-xs px-2.5 py-1 rounded-lg bg-mint/20 text-mint hover:bg-mint/30 disabled:opacity-50"
+          >
+            {audioLoading ? "Scanning..." : "Scan Devices"}
+          </button>
+        </div>
+        <p className="text-xs text-slate-400">
+          Routes call audio between your Android phone (paired to PC Bluetooth) and this PWA.
+        </p>
+
+        {audioDevices && (
+          <div className="space-y-3 pt-2">
+            <label className="block text-xs text-slate-300">
+              Input Device (Caller Voice / Phone Mic)
+              <select
+                className="mt-1 w-full rounded-xl bg-slate-900 px-3 py-2 text-xs text-white outline-none border border-white/10"
+                value={selectedIn}
+                onChange={(e) => setSelectedIn(Number(e.target.value))}
+              >
+                {audioDevices.inputs.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    [{d.id}] {d.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block text-xs text-slate-300">
+              Output Device (Your Voice / Phone Ear)
+              <select
+                className="mt-1 w-full rounded-xl bg-slate-900 px-3 py-2 text-xs text-white outline-none border border-white/10"
+                value={selectedOut}
+                onChange={(e) => setSelectedOut(Number(e.target.value))}
+              >
+                {audioDevices.outputs.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    [{d.id}] {d.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <button
+              type="button"
+              onClick={() => void saveAudioDevices()}
+              className="w-full rounded-xl bg-mint/90 py-2 text-xs font-semibold text-ink hover:bg-mint"
+            >
+              Apply Audio Routing
+            </button>
+          </div>
+        )}
+      </div>
+
       <button
         type="button"
         onClick={() => void requestNotifications()}

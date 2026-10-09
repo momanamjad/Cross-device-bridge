@@ -11,11 +11,13 @@ import {
 } from "../store/callSlice";
 import { getSocket } from "../services/socket";
 import { WebRtcService } from "../services/webrtcService";
+import { VoiceBridgeService } from "../services/voiceBridgeService";
 
 // HTML Audio Element Ref for remote playback
 export const remoteAudioRef = { current: null as HTMLAudioElement | null };
 
 let webrtcServiceInstance: WebRtcService | null = null;
+let voiceBridgeServiceInstance: VoiceBridgeService | null = null;
 
 function getWebRtcService(): WebRtcService {
   const socket = getSocket();
@@ -24,6 +26,15 @@ function getWebRtcService(): WebRtcService {
     webrtcServiceInstance = new WebRtcService(socket);
   }
   return webrtcServiceInstance;
+}
+
+function getVoiceBridgeService(): VoiceBridgeService {
+  const socket = getSocket();
+  if (!socket) throw new Error("Socket.io connection is not established");
+  if (!voiceBridgeServiceInstance) {
+    voiceBridgeServiceInstance = new VoiceBridgeService(socket);
+  }
+  return voiceBridgeServiceInstance;
 }
 
 export function useWebRTC() {
@@ -35,6 +46,29 @@ export function useWebRTC() {
   const [isMuted, setIsMuted] = useState(false);
   const [isSpeaker, setIsSpeaker] = useState(true);
   const [duration, setDuration] = useState(0);
+  const [audioLevel, setAudioLevel] = useState(0);
+
+  // Bind audio meter callbacks from VoiceBridgeService
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+    const bridge = getVoiceBridgeService();
+    bridge.setCallbacks({
+      onDownlinkLevel: (lvl) => setAudioLevel((prev) => Math.max(lvl, prev * 0.7)),
+      onUplinkLevel: (lvl) => setAudioLevel((prev) => Math.max(lvl, prev * 0.7)),
+    });
+  }, []);
+
+  // Manage VoiceBridgeService when activeCall connected status changes
+  useEffect(() => {
+    if (activeCall && activeCall.status === "connected") {
+      const bridge = getVoiceBridgeService();
+      void bridge.start(activeCall.call_id);
+    } else {
+      voiceBridgeServiceInstance?.stop();
+      setAudioLevel(0);
+    }
+  }, [activeCall?.status, activeCall?.call_id]);
 
   // Re-connect / bind socket listeners for WebRTC signaling when socket becomes active
   useEffect(() => {
@@ -291,6 +325,8 @@ export function useWebRTC() {
 
     const webrtc = getWebRtcService();
     webrtc.close();
+    voiceBridgeServiceInstance?.stop();
+    setAudioLevel(0);
     if (remoteAudioRef.current) {
       remoteAudioRef.current.srcObject = null;
     }
@@ -299,9 +335,9 @@ export function useWebRTC() {
   const toggleMute = () => {
     const nextMute = !isMuted;
     setIsMuted(nextMute);
+    voiceBridgeServiceInstance?.setMute(nextMute);
     try {
       const webrtc = getWebRtcService();
-      webrtc.close(); // wait, webrtcService has a setAudioEnabled or we can close stream tracks
     } catch {}
     // Standard track toggling:
     const stream = (webrtcServiceInstance as any)?.localStream as MediaStream | null;
@@ -325,6 +361,7 @@ export function useWebRTC() {
     duration,
     isMuted,
     isSpeaker,
+    audioLevel,
     isConnecting: activeCall?.status === "ringing",
     error,
     acceptCall,

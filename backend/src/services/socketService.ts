@@ -6,6 +6,7 @@ import { hashToken, encryptPayload, decryptPayload } from "../lib/crypto";
 import { logger } from "../lib/logger";
 import { registerCallHandlers } from "../sockets/callHandlers";
 import { WebRTCSignalServer } from "./webrtcSignal";
+import { PCAudioBridgeService } from "./pcAudioBridge";
 
 let io: Server | null = null;
 
@@ -17,8 +18,9 @@ export function initSocket(httpServer: HttpServer): Server {
     },
   });
 
-  // Initialize WebRTC signaling service
+  // Initialize WebRTC signaling service and PC Audio Bridge
   WebRTCSignalServer.initialize(io);
+  PCAudioBridgeService.initialize(io);
 
   io.use(async (socket, next) => {
     try {
