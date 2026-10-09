@@ -44,6 +44,7 @@ export function CallsPage() {
           isSpeaker={webrtc.isSpeaker}
           onSpeakerToggle={webrtc.toggleSpeaker}
           onHangup={webrtc.hangupCall}
+          audioLevel={webrtc.audioLevel}
         />
       )}
 
