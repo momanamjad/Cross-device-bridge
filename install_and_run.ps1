@@ -2,8 +2,13 @@ param(
     [string]$DeviceIp = ""
 )
 
-# Define ADB path
-$adb = "C:\Users\DELL\android-sdk\platform-tools\adb.exe"
+# Detect ADB path
+$adb = "adb"
+if (Get-Command adb -ErrorAction SilentlyContinue) {
+    $adb = "adb"
+} elseif (Test-Path "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe") {
+    $adb = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
+}
 
 if ($DeviceIp -ne "") {
     Write-Host "Connecting wirelessly to $DeviceIp:5555..." -ForegroundColor Cyan
@@ -15,7 +20,10 @@ Write-Host "==============================================" -ForegroundColor Yel
 Write-Host "1/4 Building Android Debug APK..." -ForegroundColor Cyan
 Write-Host "==============================================" -ForegroundColor Yellow
 
-$env:JAVA_HOME="C:\Users\DELL\Desktop\device bridge\android\jdk17\jdk-17.0.12+7"
+$localJdk = Join-Path $PSScriptRoot "android\jdk17\jdk-17.0.12+7"
+if (Test-Path $localJdk) {
+    $env:JAVA_HOME = $localJdk
+}
 Push-Location android
 .\gradlew assembleDebug
 Pop-Location
