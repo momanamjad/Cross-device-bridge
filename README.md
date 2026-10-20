@@ -1,14 +1,17 @@
 # Device Bridge
 
-Forward SMS and incoming calls from **your** Android phone  to an **iPhone** via a Node.js API and a Safari/PWA UI.
+Seamlessly forward SMS, OTP codes, and cellular voice calls from your **Android phone (Realme C3)** to your **iPhone** via a self-hosted Node.js backend, a native iOS SwiftUI app (with CallKit), and an optional web PWA.
 
 Use this only on devices you own.
 
-## Layout
+## Project Structure
 
-- `android/` — Kotlin app (`com.devicebridge.app`)
-- `backend/` — Express + Prisma + PostgreSQL + Socket.io
-- `frontend/` — Vite React PWA (Tailwind + Zustand)
+- `android/` — Native Kotlin app with embedded Node.js C++ runtime (`libnode.so`), telephony listeners, WebRTC, and Make It Bright UI.
+- `ios/SMSBridge/` — Native iOS SwiftUI app with system CallKit incoming call screens, WebRTC audio, auto-clipboard OTP copying, and offline local cache.
+- `backend/` — Express + Socket.io server with embedded JSON database engine (`MockPrisma`), dual-bridge voice manager, and encrypted signaling.
+- `frontend/` — Vite React PWA client (Tailwind + Zustand).
+- `firmware/esp32-voice-bridge/` — Standalone ESP-32S Bluetooth Classic HFP voice firmware and PlatformIO configuration.
+- `tools/audio-bridge/` — Native Windows C# WinMM audio loopback engine (`device-audio-bridge.exe`).
 
 ## Payloads (Android → API)
 
