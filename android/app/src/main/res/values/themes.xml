@@ -1,9 +1,12 @@
 <resources>
     <style name="Theme.DeviceBridge" parent="Theme.Material3.Dark.NoActionBar">
         <item name="colorPrimary">@color/bridge_accent</item>
-        <item name="colorSecondary">@color/bridge_accent</item>
+        <item name="colorOnPrimary">@color/bridge_on_accent</item>
+        <item name="colorSecondary">@color/bridge_warm</item>
         <item name="colorSurface">@color/bridge_surface</item>
         <item name="colorOnSurface">@color/bridge_text</item>
+        <item name="colorSurfaceVariant">@color/bridge_surface_elevated</item>
+        <item name="colorOutline">@color/bridge_card_border</item>
         <item name="android:statusBarColor">@color/bridge_bg</item>
         <item name="android:navigationBarColor">@color/bridge_bg</item>
         <item name="android:windowBackground">@color/bridge_bg</item>

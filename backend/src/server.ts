@@ -46,28 +46,28 @@ import { logger } from "./lib/logger";
 writeLog(`>>> [server.ts]: Core modules imported. Config: port=${env.port}, db=${env.databaseUrl} <<<`);
 
 import localtunnel from "localtunnel";
-
-export let currentTunnelUrl: string | null = null;
+import { setTunnelUrl, currentTunnelUrl } from "./services/tunnelState";
+export { currentTunnelUrl };
 
 async function setupTunnel(port: number) {
   try {
     const tunnel = await localtunnel({ port });
-    currentTunnelUrl = tunnel.url;
+    setTunnelUrl(tunnel.url);
     logger.info({ tunnelUrl: tunnel.url }, "Localtunnel successfully started");
 
     tunnel.on("error", (err: any) => {
       logger.warn({ err: err?.message || err }, "Localtunnel client error");
-      currentTunnelUrl = null;
+      setTunnelUrl(null);
     });
 
     tunnel.on("close", () => {
       logger.warn("Localtunnel closed, reconnecting in 15s...");
-      currentTunnelUrl = null;
+      setTunnelUrl(null);
       setTimeout(() => setupTunnel(port), 15000);
     });
   } catch (err: any) {
     logger.warn({ err: err?.message || err }, "Failed to start localtunnel (optional)");
-    currentTunnelUrl = null;
+    setTunnelUrl(null);
     setTimeout(() => setupTunnel(port), 30000);
   }
 }
@@ -88,12 +88,14 @@ async function main() {
   });
 }
 
-main().catch(async (err) => {
-  logger.error({ err }, "failed to start");
-  if (process.env.LOG_FILE_PATH) {
-    try {
-      fs.appendFileSync(process.env.LOG_FILE_PATH, `[${new Date().toISOString()}] [FATAL ERROR]: ${err?.stack || err}\n`, "utf8");
-    } catch (_) {}
-  }
-  await prisma.$disconnect();
-});
+if (require.main === module && !process.env.TEST_RUNNER) {
+  main().catch(async (err) => {
+    logger.error({ err }, "failed to start");
+    if (process.env.LOG_FILE_PATH) {
+      try {
+        fs.appendFileSync(process.env.LOG_FILE_PATH, `[${new Date().toISOString()}] [FATAL ERROR]: ${err?.stack || err}\n`, "utf8");
+      } catch (_) {}
+    }
+    await prisma.$disconnect();
+  });
+}

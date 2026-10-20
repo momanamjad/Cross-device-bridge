@@ -52,3 +52,7 @@ ios/SMSBridge/*.xcodeproj
 .turbo/
 android/jdk17/
 android/jdk17.zip
+android/app/.cxx/
+android/sdk/
+android/*.zip
+

@@ -3,38 +3,41 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bridge_bg">
+    android:background="@color/bridge_bg"
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="20dp">
 
+        <!-- Top Bar -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="8dp"
             android:layout_marginBottom="24dp">
 
             <TextView
                 android:id="@+id/backBtn"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
                 android:text="←"
                 android:textColor="@color/bridge_accent"
-                android:textSize="32sp"
-                android:textStyle="bold"
-                android:paddingEnd="12dp" />
+                android:textSize="28sp"
+                android:gravity="center"
+                android:background="@drawable/badge_status_container"
+                android:layout_marginEnd="14dp" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Settings"
                 android:textColor="@color/bridge_text"
-                android:textSize="28sp"
+                android:textSize="26sp"
                 android:textStyle="bold"
                 android:fontFamily="sans-serif-black" />
         </LinearLayout>
@@ -43,20 +46,23 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginBottom="6dp"
+            android:layout_marginStart="6dp"
+            android:layout_marginBottom="8dp"
             android:text="SERVER CONFIGURATION"
-            android:textColor="#9CA3AF"
-            android:textSize="12sp"
-            android:textStyle="bold" />
+            android:textColor="@color/bridge_text_secondary"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.1" />
 
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="20dp"
-            app:cardCornerRadius="12dp"
+            app:cardCornerRadius="16dp"
             app:cardBackgroundColor="@color/bridge_surface"
-            app:strokeWidth="0dp">
+            app:strokeColor="@color/bridge_card_border"
+            app:strokeWidth="1.5dp"
+            app:cardElevation="0dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -70,6 +76,10 @@
                     android:hint="Backend Server URL"
                     app:boxStrokeColor="@color/bridge_accent"
                     app:hintTextColor="@color/bridge_accent"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusBottomEnd="12dp"
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -87,6 +97,10 @@
                     android:hint="Device Identifier"
                     app:boxStrokeColor="@color/bridge_accent"
                     app:hintTextColor="@color/bridge_accent"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusBottomEnd="12dp"
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -104,20 +118,23 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginBottom="6dp"
+            android:layout_marginStart="6dp"
+            android:layout_marginBottom="8dp"
             android:text="SECURITY &amp; AUTHENTICATION"
-            android:textColor="#9CA3AF"
-            android:textSize="12sp"
-            android:textStyle="bold" />
+            android:textColor="@color/bridge_text_secondary"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.1" />
 
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="20dp"
-            app:cardCornerRadius="12dp"
+            app:cardCornerRadius="16dp"
             app:cardBackgroundColor="@color/bridge_surface"
-            app:strokeWidth="0dp">
+            app:strokeColor="@color/bridge_card_border"
+            app:strokeWidth="1.5dp"
+            app:cardElevation="0dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -133,6 +150,10 @@
                     app:hintTextColor="@color/bridge_accent"
                     app:endIconMode="password_toggle"
                     app:endIconTint="@color/bridge_accent"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusBottomEnd="12dp"
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -152,6 +173,10 @@
                     app:hintTextColor="@color/bridge_accent"
                     app:endIconMode="password_toggle"
                     app:endIconTint="@color/bridge_accent"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusBottomEnd="12dp"
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -169,20 +194,23 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginBottom="6dp"
+            android:layout_marginStart="6dp"
+            android:layout_marginBottom="8dp"
             android:text="FORWARDING CONFIGURATION"
-            android:textColor="#9CA3AF"
-            android:textSize="12sp"
-            android:textStyle="bold" />
+            android:textColor="@color/bridge_text_secondary"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.1" />
 
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="20dp"
-            app:cardCornerRadius="12dp"
+            app:cardCornerRadius="16dp"
             app:cardBackgroundColor="@color/bridge_surface"
-            app:strokeWidth="0dp">
+            app:strokeColor="@color/bridge_card_border"
+            app:strokeWidth="1.5dp"
+            app:cardElevation="0dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -196,14 +224,17 @@
                     android:layout_height="wrap_content"
                     android:text="Forward SMS Messages"
                     android:textColor="@color/bridge_text"
-                    android:textSize="16sp" />
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    app:thumbTint="@color/bridge_accent"
+                    app:trackTint="@color/bridge_surface_elevated" />
 
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="#2E3748"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="8dp" />
+                    android:background="@color/bridge_divider"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="10dp" />
 
                 <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/callsEnabled"
@@ -211,7 +242,10 @@
                     android:layout_height="wrap_content"
                     android:text="Forward Call Logs &amp; Events"
                     android:textColor="@color/bridge_text"
-                    android:textSize="16sp" />
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    app:thumbTint="@color/bridge_accent"
+                    app:trackTint="@color/bridge_surface_elevated" />
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
@@ -221,23 +255,25 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
-            app:cardCornerRadius="12dp"
+            app:cardCornerRadius="14dp"
             app:cardBackgroundColor="@color/bridge_surface"
-            app:strokeWidth="0dp">
+            app:strokeColor="@color/bridge_card_border"
+            app:strokeWidth="1dp"
+            app:cardElevation="0dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp"
+                android:padding="14dp"
                 android:gravity="center_vertical">
 
                 <TextView
                     android:id="@+id/syncStatus"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textColor="@color/bridge_text"
-                    android:textSize="14sp"
+                    android:textColor="@color/bridge_text_secondary"
+                    android:textSize="13sp"
                     android:fontFamily="sans-serif-medium" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
@@ -246,13 +282,14 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/save"
             android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:layout_marginBottom="8dp"
+            android:layout_height="54dp"
+            android:layout_marginBottom="10dp"
             android:text="Save Configurations"
+            android:textSize="15sp"
             android:textStyle="bold"
-            app:cornerRadius="10dp"
+            app:cornerRadius="14dp"
             app:backgroundTint="@color/bridge_accent"
-            android:textColor="@color/bridge_bg" />
+            android:textColor="@color/bridge_on_accent" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/register"
@@ -261,8 +298,10 @@
             android:layout_marginBottom="8dp"
             android:text="Register This Device"
             android:textStyle="bold"
-            app:cornerRadius="10dp"
+            app:cornerRadius="12dp"
             app:backgroundTint="@color/bridge_surface"
+            app:strokeColor="@color/bridge_card_border"
+            app:strokeWidth="1.5dp"
             android:textColor="@color/bridge_text" />
 
         <com.google.android.material.button.MaterialButton
@@ -272,8 +311,10 @@
             android:layout_marginBottom="8dp"
             android:text="Test Server Connection"
             android:textStyle="bold"
-            app:cornerRadius="10dp"
+            app:cornerRadius="12dp"
             app:backgroundTint="@color/bridge_surface"
+            app:strokeColor="@color/bridge_card_border"
+            app:strokeWidth="1.5dp"
             android:textColor="@color/bridge_text" />
 
         <com.google.android.material.button.MaterialButton
@@ -283,8 +324,10 @@
             android:layout_marginBottom="8dp"
             android:text="Sync History Now"
             android:textStyle="bold"
-            app:cornerRadius="10dp"
+            app:cornerRadius="12dp"
             app:backgroundTint="@color/bridge_surface"
+            app:strokeColor="@color/bridge_card_border"
+            app:strokeWidth="1.5dp"
             android:textColor="@color/bridge_text" />
 
         <com.google.android.material.button.MaterialButton
@@ -294,9 +337,11 @@
             android:layout_marginBottom="8dp"
             android:text="View Server Logs"
             android:textStyle="bold"
-            app:cornerRadius="10dp"
+            app:cornerRadius="12dp"
             app:backgroundTint="@color/bridge_surface"
-            android:textColor="@color/bridge_text" />
+            app:strokeColor="@color/bridge_card_border"
+            app:strokeWidth="1.5dp"
+            android:textColor="@color/bridge_warm" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/clearDb"
@@ -305,8 +350,8 @@
             android:layout_marginBottom="40dp"
             android:text="Clear Local Database"
             android:textStyle="bold"
-            app:cornerRadius="10dp"
-            app:backgroundTint="#EF4444"
+            app:cornerRadius="12dp"
+            app:backgroundTint="@color/status_red"
             android:textColor="@color/bridge_text" />
 
     </LinearLayout>

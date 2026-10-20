@@ -1,6 +1,6 @@
 import { Router } from "express";
 import os from "os";
-import { currentTunnelUrl } from "../server";
+import { currentTunnelUrl } from "../services/tunnelState";
 
 function getLocalIP(): string {
   const interfaces = os.networkInterfaces();
