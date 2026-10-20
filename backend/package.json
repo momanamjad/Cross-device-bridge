@@ -7,6 +7,9 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
+    "build:tools": "powershell -ExecutionPolicy Bypass -File tools/audio-bridge/build.ps1",
+    "test:voice": "tsx test-voice-bridge.ts",
+    "test:esp32": "tsx test-esp32-bridge.ts",
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
