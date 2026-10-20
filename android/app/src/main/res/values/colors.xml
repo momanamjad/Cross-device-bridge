@@ -1,6 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="bridge_bg">#0B1220</color>
-    <color name="bridge_surface">#151C2C</color>
-    <color name="bridge_accent">#5EEAD4</color>
-    <color name="bridge_text">#E5E7EB</color>
+    <!-- Diadora "Make It Bright" Cyber-Plum Color Palette -->
+    <!-- Reference: #FAED26 (Yellow), #46344E (Plum), #5A5560 (Slate), #9D8D8F (Ash), #9B786F (Terracotta) -->
+
+    <!-- Canvas & Surfaces -->
+    <color name="bridge_bg">#1B1320</color>
+    <color name="bridge_surface">#2D2133</color>
+    <color name="bridge_surface_elevated">#46344E</color>
+    <color name="bridge_card_border">#5A5560</color>
+    <color name="bridge_divider">#3D3545</color>
+
+    <!-- Primary Accent (Electric Cyber Yellow) -->
+    <color name="bridge_accent">#FAED26</color>
+    <color name="bridge_accent_pressed">#D8CE1B</color>
+    <color name="bridge_on_accent">#1B1320</color>
+
+    <!-- Secondary Accent (Dusty Terracotta Rose) -->
+    <color name="bridge_warm">#9B786F</color>
+    <color name="bridge_warm_bg">#3B2C2A</color>
+
+    <!-- Typography -->
+    <color name="bridge_text">#FFFFFF</color>
+    <color name="bridge_text_secondary">#9D8D8F</color>
+    <color name="bridge_text_muted">#736869</color>
+
+    <!-- Semantic Status Indicators -->
+    <color name="status_green">#FAED26</color>
+    <color name="status_red">#E11D48</color>
+    <color name="status_red_bg">#3D141F</color>
 </resources>
