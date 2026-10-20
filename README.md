@@ -1,6 +1,6 @@
 # Device Bridge
 
-Forward SMS and incoming calls from **your** Android phone (e.g. Realme C3) to an **iPhone** via a Node.js API and a Safari/PWA UI.
+Forward SMS and incoming calls from **your** Android phone  to an **iPhone** via a Node.js API and a Safari/PWA UI.
 
 Use this only on devices you own.
 
