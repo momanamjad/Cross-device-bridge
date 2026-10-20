@@ -12,6 +12,7 @@ const crypto_1 = require("../lib/crypto");
 const logger_1 = require("../lib/logger");
 const callHandlers_1 = require("../sockets/callHandlers");
 const webrtcSignal_1 = require("./webrtcSignal");
+const voiceBridgeManager_1 = require("./voiceBridgeManager");
 let io = null;
 function initSocket(httpServer) {
     io = new socket_io_1.Server(httpServer, {
@@ -20,8 +21,9 @@ function initSocket(httpServer) {
             methods: ["GET", "POST"],
         },
     });
-    // Initialize WebRTC signaling service
+    // Initialize WebRTC signaling service and VoiceBridgeManager (coordinates both PC and ESP32)
     webrtcSignal_1.WebRTCSignalServer.initialize(io);
+    voiceBridgeManager_1.VoiceBridgeManager.initialize(io);
     io.use(async (socket, next) => {
         try {
             const token = socket.handshake.auth?.token ??
@@ -52,6 +54,12 @@ function initSocket(httpServer) {
         const extRoom = `device_ext:${externalId}`;
         void socket.join(room);
         void socket.join(extRoom);
+        // Auto-join device_ext:iphone if iOS client is detected
+        const ua = String(socket.handshake.headers["user-agent"] || "").toLowerCase();
+        if (externalId === "iphone" || ua.includes("cfnetwork") || ua.includes("iphone") || ua.includes("ios") || ua.includes("darwin")) {
+            void socket.join("device_ext:iphone");
+            logger_1.logger.info({ sid: socket.id }, "Joined device_ext:iphone based on client user-agent");
+        }
         socket.use((packet, next) => {
             // packet: [eventName, arg1, arg2, ...]
             if (packet.length > 1 && packet[1] && typeof packet[1] === "object" && typeof packet[1].data === "string") {

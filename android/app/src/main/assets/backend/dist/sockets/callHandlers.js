@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.registerCallHandlers = registerCallHandlers;
 const zod_1 = require("zod");
 const webrtcSignal_1 = require("../services/webrtcSignal");
+const voiceBridgeManager_1 = require("../services/voiceBridgeManager");
 const winstonLogger_1 = require("../lib/winstonLogger");
 const crypto_1 = require("../lib/crypto");
 const environment_1 = require("../config/environment");
@@ -37,6 +38,10 @@ const callOutgoingSchema = zod_1.z.object({
 const callHangupSchema = zod_1.z.object({
     call_id: zod_1.z.string().min(1),
     duration: zod_1.z.number().optional(),
+});
+const callAudioUplinkSchema = zod_1.z.object({
+    call_id: zod_1.z.string().min(1),
+    pcm: zod_1.z.string().min(1),
 });
 const webrtcOfferSchema = zod_1.z.object({
     call_id: zod_1.z.string().min(1),
@@ -87,6 +92,8 @@ function registerCallHandlers(io, socket) {
             const data = callAcceptSchema.parse(unwrapPayload(payload));
             await socket.join(`call_${data.call_id}`);
             await webrtcSignal_1.WebRTCSignalServer.handleAcceptCall(data.call_id, fromDevice);
+            // Route voice dynamically (ESP-32S or PC Bluetooth)
+            await voiceBridgeManager_1.VoiceBridgeManager.onCallAccept(data.call_id);
         }
         catch (err) {
             winstonLogger_1.winstonLogger.error(`Error in call:accept handler: ${err.message || err}`, { err });
@@ -99,6 +106,7 @@ function registerCallHandlers(io, socket) {
             const data = callRejectSchema.parse(unwrapPayload(payload));
             await socket.join(`call_${data.call_id}`);
             await webrtcSignal_1.WebRTCSignalServer.handleRejectCall(data.call_id, fromDevice);
+            voiceBridgeManager_1.VoiceBridgeManager.onCallEnd();
         }
         catch (err) {
             winstonLogger_1.winstonLogger.error(`Error in call:reject/rejected handler: ${err.message || err}`, { err });
@@ -125,11 +133,20 @@ function registerCallHandlers(io, socket) {
             const data = callHangupSchema.parse(unwrapPayload(payload));
             await socket.join(`call_${data.call_id}`);
             await webrtcSignal_1.WebRTCSignalServer.handleCallEnd(data.call_id, data.duration);
+            voiceBridgeManager_1.VoiceBridgeManager.onCallEnd();
         }
         catch (err) {
             winstonLogger_1.winstonLogger.error(`Error in call:hangup handler: ${err.message || err}`, { err });
             socket.emit("call:error", { call_id: "", error_message: err.message || "Invalid payload" });
         }
+    });
+    socket.on("call:audio-uplink", (payload) => {
+        try {
+            const data = callAudioUplinkSchema.parse(unwrapPayload(payload));
+            const pcmBuffer = Buffer.from(data.pcm, "base64");
+            voiceBridgeManager_1.VoiceBridgeManager.sendUplinkChunk(data.call_id, pcmBuffer);
+        }
+        catch (_) { }
     });
     socket.on("webrtc:offer", async (payload) => {
         try {

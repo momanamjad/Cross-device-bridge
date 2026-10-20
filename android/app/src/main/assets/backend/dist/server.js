@@ -43,25 +43,26 @@ const socketService_1 = require("./services/socketService");
 const logger_1 = require("./lib/logger");
 writeLog(`>>> [server.ts]: Core modules imported. Config: port=${environment_1.env.port}, db=${environment_1.env.databaseUrl} <<<`);
 const localtunnel_1 = __importDefault(require("localtunnel"));
-exports.currentTunnelUrl = null;
+const tunnelState_1 = require("./services/tunnelState");
+Object.defineProperty(exports, "currentTunnelUrl", { enumerable: true, get: function () { return tunnelState_1.currentTunnelUrl; } });
 async function setupTunnel(port) {
     try {
         const tunnel = await (0, localtunnel_1.default)({ port });
-        exports.currentTunnelUrl = tunnel.url;
+        (0, tunnelState_1.setTunnelUrl)(tunnel.url);
         logger_1.logger.info({ tunnelUrl: tunnel.url }, "Localtunnel successfully started");
         tunnel.on("error", (err) => {
             logger_1.logger.warn({ err: err?.message || err }, "Localtunnel client error");
-            exports.currentTunnelUrl = null;
+            (0, tunnelState_1.setTunnelUrl)(null);
         });
         tunnel.on("close", () => {
             logger_1.logger.warn("Localtunnel closed, reconnecting in 15s...");
-            exports.currentTunnelUrl = null;
+            (0, tunnelState_1.setTunnelUrl)(null);
             setTimeout(() => setupTunnel(port), 15000);
         });
     }
     catch (err) {
         logger_1.logger.warn({ err: err?.message || err }, "Failed to start localtunnel (optional)");
-        exports.currentTunnelUrl = null;
+        (0, tunnelState_1.setTunnelUrl)(null);
         setTimeout(() => setupTunnel(port), 30000);
     }
 }
@@ -80,14 +81,16 @@ async function main() {
         setupTunnel(environment_1.env.port);
     });
 }
-main().catch(async (err) => {
-    logger_1.logger.error({ err }, "failed to start");
-    if (process.env.LOG_FILE_PATH) {
-        try {
-            fs_1.default.appendFileSync(process.env.LOG_FILE_PATH, `[${new Date().toISOString()}] [FATAL ERROR]: ${err?.stack || err}\n`, "utf8");
+if (require.main === module && !process.env.TEST_RUNNER) {
+    main().catch(async (err) => {
+        logger_1.logger.error({ err }, "failed to start");
+        if (process.env.LOG_FILE_PATH) {
+            try {
+                fs_1.default.appendFileSync(process.env.LOG_FILE_PATH, `[${new Date().toISOString()}] [FATAL ERROR]: ${err?.stack || err}\n`, "utf8");
+            }
+            catch (_) { }
         }
-        catch (_) { }
-    }
-    await database_1.prisma.$disconnect();
-});
+        await database_1.prisma.$disconnect();
+    });
+}
 //# sourceMappingURL=server.js.map

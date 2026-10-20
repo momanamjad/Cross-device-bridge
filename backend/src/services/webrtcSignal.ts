@@ -84,12 +84,20 @@ export class WebRTCSignalServer {
     // Make sure both devices join room call_${callId} if currently connected
     await this.joinDevicesToCallRoom(callId);
 
-    // Broadcast call:incoming to iPhone
-    this.broadcastToDevice("iphone", "call:incoming", {
+    const callPayload = {
       call_id: callId,
       caller_number: callerNumber,
       timestamp: Date.now(),
-    });
+    };
+    const encrypted = encryptPayload(callPayload, env.registerSecret);
+
+    // Broadcast call:incoming to iPhone targeted room
+    await this.broadcastToDevice("iphone", "call:incoming", callPayload);
+
+    // Also broadcast to call room and all connected sockets so iOS devices receive it regardless of auth token
+    const io = this.getIo();
+    io.to(`call_${callId}`).emit("call:incoming", { data: encrypted, ...callPayload });
+    io.emit("call:incoming", { data: encrypted, ...callPayload });
 
     return activeCall;
   }
@@ -375,6 +383,16 @@ export class WebRTCSignalServer {
       targetDevice = "iphone";
       const encrypted = encryptPayload(data, env.registerSecret);
       io.to(`device_ext:${targetDevice}`).emit(event, { data: encrypted, ...data });
+
+      // In case the iPhone scanned the Android QR code and inherited the Android token,
+      // also deliver to any socket that is an iOS client or web client
+      const sockets = await io.fetchSockets();
+      for (const s of sockets) {
+        const ua = String(s.handshake.headers["user-agent"] || "").toLowerCase();
+        if (s.data.externalId === "iphone" || ua.includes("cfnetwork") || ua.includes("iphone") || ua.includes("ios") || ua.includes("darwin")) {
+          s.emit(event, { data: encrypted, ...data });
+        }
+      }
     }
 
     logger.debug(`WebRTCSignalServer: broadcastToDevice target=${targetDevice} event=${event}`);

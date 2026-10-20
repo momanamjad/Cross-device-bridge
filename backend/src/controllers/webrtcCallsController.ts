@@ -57,6 +57,23 @@ export async function handleIncomingCallRest(
     const callId = randomUUID();
     await WebRTCSignalServer.handleIncomingCall(body.caller_number, callId);
 
+    // Also persist in callNotification table so GET /api/calls immediately displays it in iOS Calls tab
+    try {
+      await prisma.callNotification.create({
+        data: {
+          id: callId,
+          deviceId: device.id,
+          caller: body.caller_number,
+          callState: "RINGING",
+          timestamp: new Date(),
+          duration: 0,
+          synced: true,
+        },
+      });
+    } catch (e: any) {
+      logger.warn(`Could not create callNotification record: ${e?.message}`);
+    }
+
     res.status(201).json({
       call_id: callId,
       status: "created",
@@ -106,6 +123,18 @@ export async function handleEndedCallRest(
     logger.info(`REST API: handleEndedCall call_id=${body.call_id} duration_seconds=${body.duration_seconds}`);
 
     await WebRTCSignalServer.handleCallEnd(body.call_id, body.duration_seconds);
+
+    // Also update callNotification record
+    try {
+      await prisma.callNotification.updateMany({
+        where: { id: body.call_id },
+        data: {
+          duration: body.duration_seconds,
+          callState: "ENDED",
+          synced: true,
+        },
+      });
+    } catch (_) {}
 
     res.status(200).json({
       status: "recorded",

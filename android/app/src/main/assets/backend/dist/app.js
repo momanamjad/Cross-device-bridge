@@ -16,6 +16,7 @@ const devices_1 = require("./routes/devices");
 const messages_1 = require("./routes/messages");
 const webrtcCalls_1 = require("./routes/webrtcCalls");
 const encryption_1 = require("./middleware/encryption");
+const audioRoutes_1 = require("./routes/audioRoutes");
 const path_1 = __importDefault(require("path"));
 function createApp() {
     const app = (0, express_1.default)();
@@ -30,6 +31,7 @@ function createApp() {
     app.use("/api/messages", encryption_1.encryptRestResponse, messages_1.messagesRouter);
     app.use("/api/calls", encryption_1.encryptRestResponse, webrtcCalls_1.webrtcCallsRouter);
     app.use("/api/calls", encryption_1.encryptRestResponse, messages_1.callsRouter);
+    app.use("/api/audio", encryption_1.encryptRestResponse, audioRoutes_1.audioRouter);
     const uploadDir = process.env.STORAGE_DIR ? path_1.default.join(process.env.STORAGE_DIR, "uploads") : path_1.default.join(process.cwd(), "uploads");
     try {
         if (!path_1.default.isAbsolute(uploadDir) || !require("fs").existsSync(uploadDir)) {

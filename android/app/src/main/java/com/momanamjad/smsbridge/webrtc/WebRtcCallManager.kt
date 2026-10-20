@@ -56,6 +56,22 @@ object WebRtcCallManager {
         if (callId != currentCallId) return
         updateState(CallState.Accepting(callId))
 
+        // Programmatically answer the incoming cellular SIM call on Android
+        try {
+            val telecomManager = context.getSystemService(Context.TELECOM_SERVICE) as? android.telecom.TelecomManager
+            if (context.checkSelfPermission(android.Manifest.permission.ANSWER_PHONE_CALLS) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    @Suppress("DEPRECATION")
+                    telecomManager?.acceptRingingCall()
+                    Log.i(TAG, "Cellular call answered via TelecomManager.acceptRingingCall()")
+                }
+            } else {
+                Log.w(TAG, "ANSWER_PHONE_CALLS permission not granted, cannot answer cellular call automatically.")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to answer cellular call via TelecomManager", e)
+        }
+
         // Create WebRtcClient
         val client = WebRtcClient(context, SocketManager, callId)
         webRtcClient = client

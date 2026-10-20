@@ -53,6 +53,13 @@ export function initSocket(httpServer: HttpServer): Server {
     const extRoom = `device_ext:${externalId}`;
     void socket.join(room);
     void socket.join(extRoom);
+
+    // Auto-join device_ext:iphone if iOS client is detected
+    const ua = String(socket.handshake.headers["user-agent"] || "").toLowerCase();
+    if (externalId === "iphone" || ua.includes("cfnetwork") || ua.includes("iphone") || ua.includes("ios") || ua.includes("darwin")) {
+      void socket.join("device_ext:iphone");
+      logger.info({ sid: socket.id }, "Joined device_ext:iphone based on client user-agent");
+    }
     
     socket.use((packet, next) => {
       // packet: [eventName, arg1, arg2, ...]

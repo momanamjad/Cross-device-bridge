@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.healthRouter = void 0;
 const express_1 = require("express");
 const os_1 = __importDefault(require("os"));
-const server_1 = require("../server");
+const tunnelState_1 = require("../services/tunnelState");
 function getLocalIP() {
     const interfaces = os_1.default.networkInterfaces();
     const candidates = [];
@@ -31,7 +31,7 @@ exports.healthRouter.get("/", (req, res) => {
         status: "ok",
         uptime: process.uptime(),
         server_ip: getLocalIP(),
-        tunnel_url: server_1.currentTunnelUrl,
+        tunnel_url: tunnelState_1.currentTunnelUrl,
     });
 });
 //# sourceMappingURL=health.js.map

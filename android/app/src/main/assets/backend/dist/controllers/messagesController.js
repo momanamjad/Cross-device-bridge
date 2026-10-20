@@ -14,12 +14,40 @@ function deviceOf(req) {
     return req.device;
 }
 function extractOtp(text) {
-    const keywordMatch = text.match(/(?:code|otp|pin|verification|password|code is|otp is)[:\s]+([0-9]{4,8})/i);
-    if (keywordMatch && keywordMatch[1]) {
-        return keywordMatch[1];
+    // Strip trailing Android SMS Retriever hash <...>
+    const clean = text.replace(/<[a-zA-Z0-9_\-+]{10,12}>/g, "");
+    // High-confidence prefix match: supports alphanumeric (e.g. Easypaisa 'VgPr44F96f') and numeric
+    const contextualMatch = clean.match(/(?:registration\/login\s+otp\s+is|login\s+otp\s+is|registration\s+otp\s+is|otp\s+is|code\s+is|pin\s+is|verification\s+code\s+is|password\s+is|otp[:\s]+|code[:\s]+|pin[:\s]+)\s*([a-zA-Z0-9]{4,10})/i);
+    if (contextualMatch && contextualMatch[1]) {
+        const candidate = contextualMatch[1];
+        if (candidate === "3737" || candidate === "111003737") {
+            return null;
+        }
+        if (/\d/.test(candidate)) {
+            return candidate;
+        }
     }
-    const digitMatch = text.match(/\b([0-9]{4,8})\b/);
-    return digitMatch ? digitMatch[1] : null;
+    // Fallback: only if message contains OTP/verification keywords
+    if (/\b(otp|code|pin|verification|verify|password)\b/i.test(clean)) {
+        const digitMatches = [...clean.matchAll(/\b([0-9]{4,8})\b/g)];
+        for (const match of digitMatches) {
+            const candidate = match[1];
+            if (candidate === "3737" || candidate.includes("3737")) {
+                continue;
+            }
+            const idx = match.index ?? 0;
+            const preceding = clean.slice(Math.max(0, idx - 15), idx).toLowerCase();
+            if (/call|dial|helpline|rabta|contact/.test(preceding)) {
+                continue;
+            }
+            const following = clean.slice(idx + match[0].length, idx + match[0].length + 10).toLowerCase();
+            if (/mb|gb|min|rs|paisa/.test(following)) {
+                continue;
+            }
+            return candidate;
+        }
+    }
+    return null;
 }
 async function createSms(req, res, next) {
     try {
@@ -27,6 +55,25 @@ async function createSms(req, res, next) {
         const body = schemas_1.smsSchema.parse(req.body);
         if (body.device_id !== device.externalId) {
             throw new errorHandler_1.HttpError(403, "device_id does not match token");
+        }
+        // Deduplication: prevent duplicate push within 10-second window
+        const tenSecondsAgo = new Date(Date.now() - 10000);
+        const existing = await database_1.prisma.message.findFirst({
+            where: {
+                deviceId: device.id,
+                sender: body.sender,
+                content: body.message,
+                createdAt: { gte: tenSecondsAgo },
+            },
+        });
+        if (existing) {
+            res.status(200).json({
+                status: "success",
+                message_id: existing.id,
+                received_at: existing.createdAt.toISOString(),
+                duplicate: true,
+            });
+            return;
         }
         const message = await database_1.prisma.message.create({
             data: {
@@ -46,8 +93,8 @@ async function createSms(req, res, next) {
             timestamp: message.timestamp.toISOString(),
             synced: message.synced,
         };
+        // Emit only once directly to targeted device rooms (prevents double-notification)
         (0, socketService_1.emitToDevice)(device.id, "message:new", payload);
-        (0, socketService_1.broadcastToAll)("message:new", payload);
         res.status(201).json({
             status: "success",
             message_id: message.id,

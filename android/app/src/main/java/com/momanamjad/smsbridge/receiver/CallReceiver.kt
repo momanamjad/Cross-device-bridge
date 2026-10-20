@@ -23,6 +23,11 @@ class CallReceiver : BroadcastReceiver() {
             try {
                 NetworkManager.enqueueCall(number, state, System.currentTimeMillis())
 
+                val logFile = java.io.File(context.filesDir, "node_out.txt")
+                try {
+                    logFile.appendText("\n[${java.util.Date()}] [CallReceiver] Broadcast received: state=$state, caller=$number\n")
+                } catch (_: Exception) {}
+
                 if (state == TelephonyManager.EXTRA_STATE_RINGING) {
                     val app = com.momanamjad.smsbridge.BridgeApp.instance
                     val url = app.settings.backendUrl
@@ -63,14 +68,26 @@ class CallReceiver : BroadcastReceiver() {
                                 if (!returnedCallId.isNullOrBlank()) {
                                     finalCallId = returnedCallId
                                 }
+                                try {
+                                    logFile.appendText("[${java.util.Date()}] [CallReceiver] Forwarded call to backend -> emitted to iPhone (callId=$finalCallId)\n")
+                                } catch (_: Exception) {}
                             } else {
                                 Log.e(TAG, "Failed to register WebRTC call on backend, code=${response.code()}")
+                                try {
+                                    logFile.appendText("[${java.util.Date()}] [CallReceiver] Backend returned HTTP ${response.code()} on /api/calls/incoming\n")
+                                } catch (_: Exception) {}
                             }
                         } catch (e: Exception) {
                             Log.e(TAG, "Exception during POST to /api/calls/incoming", e)
+                            try {
+                                logFile.appendText("[${java.util.Date()}] [CallReceiver] Exception posting to backend: ${e.message}\n")
+                            } catch (_: Exception) {}
                         }
                     } else {
                         Log.w(TAG, "Backend configurations missing or calls disabled. URL: $url, callsEnabled: ${app.settings.callsEnabled}")
+                        try {
+                            logFile.appendText("[${java.util.Date()}] [CallReceiver] Cannot notify backend: token is blank or calls disabled (url=$url, callsEnabled=${app.settings.callsEnabled})\n")
+                        } catch (_: Exception) {}
                     }
 
                     // 5. Trigger: handleIncomingCall(callId, callerNumber)
