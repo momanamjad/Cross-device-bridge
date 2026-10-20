@@ -30,6 +30,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val handler = Handler(Looper.getMainLooper())
     private var bridgeStarted = false
+    private var lastQrPayload: String? = null
 
     private val notificationPermLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission(),
@@ -236,7 +237,7 @@ class MainActivity : AppCompatActivity() {
 
                     if (serverIP != "--") {
                         generateQRCode(serverIP, tunnelUrl)
-                    } else {
+                    } else if (lastQrPayload == null) {
                         binding.qrCard.visibility = View.GONE
                     }
                 }
@@ -249,7 +250,7 @@ class MainActivity : AppCompatActivity() {
                     binding.statIP.text = wifiIp
                     if (wifiIp != "127.0.0.1") {
                         generateQRCode(wifiIp, "")
-                    } else {
+                    } else if (lastQrPayload == null) {
                         binding.qrCard.visibility = View.GONE
                     }
                 }
@@ -343,8 +344,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun generateQRCode(ip: String, tunnelUrl: String) {
-        if (binding.qrCard.visibility == View.VISIBLE && binding.qrImage.drawable != null) return
-
         val settings = BridgeApp.instance.settings
         val secret = settings.registerSecret.ifBlank { "super_secret_bridge_key" }
         val token = settings.apiToken
@@ -360,6 +359,9 @@ class MainActivity : AppCompatActivity() {
                 put("tunnel_url", tunnelUrl)
             }
         }.toString()
+
+        if (qrData == lastQrPayload && binding.qrCard.visibility == View.VISIBLE && binding.qrImage.drawable != null) return
+        lastQrPayload = qrData
 
         CoroutineScope(Dispatchers.Default).launch {
             try {
@@ -377,9 +379,11 @@ class MainActivity : AppCompatActivity() {
                 val bitmap = Bitmap.createBitmap(pixels, width, height, Bitmap.Config.RGB_565)
                 withContext(Dispatchers.Main) {
                     binding.qrImage.setImageBitmap(bitmap)
-                    binding.qrCard.alpha = 0f
-                    binding.qrCard.visibility = View.VISIBLE
-                    binding.qrCard.animate().alpha(1f).setDuration(400).start()
+                    if (binding.qrCard.visibility != View.VISIBLE) {
+                        binding.qrCard.alpha = 0f
+                        binding.qrCard.visibility = View.VISIBLE
+                        binding.qrCard.animate().alpha(1f).setDuration(250).start()
+                    }
                 }
             } catch (e: Exception) {
                 android.util.Log.e("MainActivity", "Failed to generate QR code", e)

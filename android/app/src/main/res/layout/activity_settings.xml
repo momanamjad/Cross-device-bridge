@@ -1,16 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/settingsScrollView"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bridge_bg"
-    android:fillViewport="true">
+    android:fillViewport="true"
+    android:overScrollMode="never"
+    android:descendantFocusability="beforeDescendants"
+    android:focusable="true"
+    android:focusableInTouchMode="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="20dp">
+        android:padding="20dp"
+        android:descendantFocusability="beforeDescendants"
+        android:focusable="true"
+        android:focusableInTouchMode="true">
 
         <!-- Top Bar -->
         <LinearLayout
@@ -289,7 +297,10 @@
             android:textStyle="bold"
             app:cornerRadius="14dp"
             app:backgroundTint="@color/bridge_accent"
-            android:textColor="@color/bridge_on_accent" />
+            android:textColor="@color/bridge_on_accent"
+            app:elevation="0dp"
+            app:pressedTranslationZ="0dp"
+            android:stateListAnimator="@null" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/register"
@@ -302,7 +313,10 @@
             app:backgroundTint="@color/bridge_surface"
             app:strokeColor="@color/bridge_card_border"
             app:strokeWidth="1.5dp"
-            android:textColor="@color/bridge_text" />
+            android:textColor="@color/bridge_text"
+            app:elevation="0dp"
+            app:pressedTranslationZ="0dp"
+            android:stateListAnimator="@null" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/testConnection"
@@ -315,7 +329,10 @@
             app:backgroundTint="@color/bridge_surface"
             app:strokeColor="@color/bridge_card_border"
             app:strokeWidth="1.5dp"
-            android:textColor="@color/bridge_text" />
+            android:textColor="@color/bridge_text"
+            app:elevation="0dp"
+            app:pressedTranslationZ="0dp"
+            android:stateListAnimator="@null" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/syncNow"
@@ -328,7 +345,10 @@
             app:backgroundTint="@color/bridge_surface"
             app:strokeColor="@color/bridge_card_border"
             app:strokeWidth="1.5dp"
-            android:textColor="@color/bridge_text" />
+            android:textColor="@color/bridge_text"
+            app:elevation="0dp"
+            app:pressedTranslationZ="0dp"
+            android:stateListAnimator="@null" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/viewLogs"
@@ -341,7 +361,10 @@
             app:backgroundTint="@color/bridge_surface"
             app:strokeColor="@color/bridge_card_border"
             app:strokeWidth="1.5dp"
-            android:textColor="@color/bridge_warm" />
+            android:textColor="@color/bridge_warm"
+            app:elevation="0dp"
+            app:pressedTranslationZ="0dp"
+            android:stateListAnimator="@null" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/clearDb"
@@ -352,7 +375,10 @@
             android:textStyle="bold"
             app:cornerRadius="12dp"
             app:backgroundTint="@color/status_red"
-            android:textColor="@color/bridge_text" />
+            android:textColor="@color/bridge_text"
+            app:elevation="0dp"
+            app:pressedTranslationZ="0dp"
+            android:stateListAnimator="@null" />
 
     </LinearLayout>
-</ScrollView>
+</androidx.core.widget.NestedScrollView>
