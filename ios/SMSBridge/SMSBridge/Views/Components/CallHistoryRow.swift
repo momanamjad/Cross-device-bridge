@@ -8,7 +8,7 @@ struct CallHistoryRow: View {
             // Directional icon
             Image(systemName: record.isIncoming ? "phone.arrow.down.left" : "phone.arrow.up.right")
                 .font(.title3)
-                .foregroundColor(record.isIncoming ? .green : .blue)
+                .foregroundColor(record.isIncoming ? (record.duration == 0 ? .red : .green) : .blue)
                 .frame(width: 30)
             
             VStack(alignment: .leading, spacing: 4) {
@@ -16,6 +16,7 @@ struct CallHistoryRow: View {
                 Text(record.number)
                     .font(.body)
                     .bold()
+                    .foregroundColor(record.isIncoming && record.duration == 0 ? .red : .primary)
                 
                 // Duration details
                 Text(formattedDuration(record.duration))

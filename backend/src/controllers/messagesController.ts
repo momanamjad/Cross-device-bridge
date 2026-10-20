@@ -241,6 +241,8 @@ export async function listCalls(
         timestamp: c.timestamp.toISOString(),
         duration: c.duration,
         synced: c.synced,
+        isIncoming: c.callState !== "OUTGOING",
+        is_incoming: c.callState !== "OUTGOING",
       })),
       total,
       limit: query.limit,

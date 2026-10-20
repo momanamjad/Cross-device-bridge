@@ -74,7 +74,15 @@ class BackendService {
         let decryptedData = try CryptoHelper.decryptPayload(encryptedStr, secret: secret)
         let response = try JSONDecoder().decode(CallListResponse.self, from: decryptedData)
         return response.data.map {
-            Call(callId: $0.id, number: $0.caller, name: nil, duration: $0.duration, timestamp: ISO8601DateFormatter().date(from: $0.timestamp) ?? Date(), isIncoming: $0.state == "INCOMING" || $0.state == "RINGING" && $0.duration == 0)
+            let isIncomingCall = $0.isIncoming ?? $0.is_incoming ?? ($0.state != "OUTGOING")
+            return Call(
+                callId: $0.id,
+                number: $0.caller,
+                name: nil,
+                duration: $0.duration,
+                timestamp: ISO8601DateFormatter().date(from: $0.timestamp) ?? Date(),
+                isIncoming: isIncomingCall
+            )
         }
     }
 
@@ -130,6 +138,8 @@ struct CallListResponse: Decodable {
         let state: String
         let timestamp: String
         let duration: Double
+        let isIncoming: Bool?
+        let is_incoming: Bool?
     }
     let data: [CallData]
 }

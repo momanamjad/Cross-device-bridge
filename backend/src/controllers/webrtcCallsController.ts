@@ -242,15 +242,15 @@ export async function handleHistoryRest(
       callId: c.id,
       number: c.receiver_number || c.initiator_number || "unknown",
       name: c.initiator_number || null,
-      isIncoming: !c.is_incoming,
+      isIncoming: Boolean(c.is_incoming),
 
       // Snake_case keys for other consumers/tests
       id: c.id,
-      caller_number: c.initiator_number || c.receiver_number || "unknown",
+      caller_number: c.receiver_number || c.initiator_number || "unknown",
       caller_name: c.initiator_number || c.receiver_number || "unknown",
       duration: c.duration_seconds,
       timestamp: c.started_at,
-      is_incoming: !c.is_incoming,
+      is_incoming: Boolean(c.is_incoming),
       call_type: c.is_incoming ? 'incoming' : 'outgoing'
     }));
 
