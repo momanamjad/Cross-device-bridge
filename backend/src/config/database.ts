@@ -263,6 +263,25 @@ class MockPrisma {
       return null;
     },
 
+    async create(args: any) {
+      const db = readDb();
+      const now = new Date().toISOString();
+      const record: DeviceRecord = {
+        id: generateId(),
+        externalId: args.data.externalId,
+        deviceName: args.data.deviceName,
+        deviceType: args.data.deviceType,
+        osVersion: args.data.osVersion || "",
+        tokenHash: args.data.tokenHash,
+        isActive: args.data.isActive ?? true,
+        createdAt: now,
+        updatedAt: now
+      };
+      db.devices.push(record);
+      writeDb(db);
+      return mapDevice(record);
+    },
+
     async upsert(args: any) {
       const db = readDb();
       let index = db.devices.findIndex(d => d.externalId === args.where.externalId);
@@ -336,6 +355,25 @@ class MockPrisma {
         list = list.filter(m => m.synced === args.where.synced);
       }
       return list.length;
+    },
+
+    async findFirst(args: any) {
+      const db = readDb();
+      let list = db.messages;
+      if (args.where?.deviceId) {
+        list = list.filter(m => m.deviceId === args.where.deviceId);
+      }
+      if (args.where?.sender) {
+        list = list.filter(m => m.sender === args.where.sender);
+      }
+      if (args.where?.content) {
+        list = list.filter(m => m.content === args.where.content);
+      }
+      if (args.where?.createdAt?.gte) {
+        const gteTime = new Date(args.where.createdAt.gte).getTime();
+        list = list.filter(m => new Date(m.createdAt).getTime() >= gteTime);
+      }
+      return list.length > 0 ? mapMessage(list[0]) : null;
     },
 
     async findMany(args: any) {
