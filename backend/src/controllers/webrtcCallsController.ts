@@ -13,13 +13,13 @@ import { env } from "../config/environment";
 // Request schemas
 export const restIncomingSchema = z.object({
   caller_number: z.string().min(1),
-  device_id: z.string().min(1),
+  device_id: z.string().min(1).optional(),
   timestamp: z.number().int().positive().optional(),
 });
 
 export const restOutgoingSchema = z.object({
   phone_number: z.string().min(1),
-  device_id: z.string().min(1),
+  device_id: z.string().min(1).optional(),
 });
 
 export const restEndedSchema = z.object({
@@ -50,9 +50,7 @@ export async function handleIncomingCallRest(
       throw new HttpError(403, "iPhones are not authorized to signal incoming SIM calls");
     }
 
-    if (body.device_id !== device.externalId) {
-      throw new HttpError(400, "device_id in request body does not match authorized device");
-    }
+    const targetDeviceId = body.device_id || device.externalId;
 
     const callId = randomUUID();
     await WebRTCSignalServer.handleIncomingCall(body.caller_number, callId);

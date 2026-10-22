@@ -83,8 +83,8 @@ class CallViewModel: ObservableObject {
         ws.onWebRTCOffer = { [weak self] callId, sdp in
             Task {
                 guard let self = self else { return }
-                self.webrtc.initializeConnection()
                 do {
+                    try await self.webrtc.initialize()
                     let answerSdp = try await self.webrtc.processOfferAndAnswer(sdpOffer: sdp)
                     self.ws.emit("webrtc:answer", [
                         "call_id": callId,

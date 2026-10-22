@@ -1,27 +1,27 @@
 {
   "devices": [
     {
-      "id": "4aogb9rmt4deilv",
+      "id": "l7ixekjmvj8hewt",
       "externalId": "realme_c3_1",
       "deviceName": "Realme Test Phone",
       "deviceType": "android",
       "osVersion": "Android 10",
-      "tokenHash": "31add7d6673a9ace9faef364522679a308b2ca43641de175eeef66a914e87571",
+      "tokenHash": "8106f39904e19411ab051033d8fe7e88388ab2ee114f74cbe4dc802626a3d972",
       "isActive": true,
-      "createdAt": "2026-08-22T12:44:34.867Z",
-      "updatedAt": "2026-08-22T12:44:34.867Z"
+      "createdAt": "2026-10-22T07:42:49.277Z",
+      "updatedAt": "2026-10-22T07:42:49.277Z"
     },
     {
-      "id": "jwi2iebmt4deim4",
+      "id": "hjliuoqmvj8heyo",
       "externalId": "iphone",
       "deviceName": "iPhone Test Client",
       "deviceType": "ios",
       "osVersion": "iOS 17",
-      "tokenHash": "99857214b82e5b1382aebcc378b0760bf4e855ad28b6844c4d1895f9f4f2f9ba",
+      "tokenHash": "d07be008d342ebfb0d3cb27638d76a65334874de3a43c8580ccc10397065da25",
       "isActive": true,
-      "createdAt": "2026-08-22T12:44:34.876Z",
-      "updatedAt": "2026-08-22T12:44:37.042Z",
-      "lastSeen": "2026-08-22T12:44:37.039Z"
+      "createdAt": "2026-10-22T07:42:49.344Z",
+      "updatedAt": "2026-10-22T07:42:51.628Z",
+      "lastSeen": "2026-10-22T07:42:51.628Z"
     }
   ],
   "messages": [],
@@ -34,13 +34,13 @@
       "receiver_number": "+15550199",
       "state": "ENDED",
       "is_incoming": true,
-      "started_at": "2026-08-22T12:44:35.909Z",
-      "ended_at": "2026-08-22T12:44:36.533Z",
+      "started_at": "2026-10-22T07:42:50.481Z",
+      "ended_at": "2026-10-22T07:42:51.106Z",
       "duration_seconds": 12,
       "call_sid": null,
       "connected_successfully": true,
-      "created_at": "2026-08-22T12:44:35.911Z",
-      "updated_at": "2026-08-22T12:44:36.535Z"
+      "created_at": "2026-10-22T07:42:50.482Z",
+      "updated_at": "2026-10-22T07:42:51.107Z"
     },
     {
       "id": "rapid-call-id-0",
@@ -49,13 +49,13 @@
       "receiver_number": "112233",
       "state": "ENDED",
       "is_incoming": true,
-      "started_at": "2026-08-22T12:44:37.049Z",
-      "ended_at": "2026-08-22T12:44:37.110Z",
+      "started_at": "2026-10-22T07:42:51.769Z",
+      "ended_at": "2026-10-22T07:42:51.870Z",
       "duration_seconds": 2,
       "call_sid": null,
       "connected_successfully": false,
-      "created_at": "2026-08-22T12:44:37.051Z",
-      "updated_at": "2026-08-22T12:44:37.111Z"
+      "created_at": "2026-10-22T07:42:51.770Z",
+      "updated_at": "2026-10-22T07:42:51.871Z"
     },
     {
       "id": "rapid-call-id-1",
@@ -64,13 +64,13 @@
       "receiver_number": "112233",
       "state": "ENDED",
       "is_incoming": true,
-      "started_at": "2026-08-22T12:44:37.174Z",
-      "ended_at": "2026-08-22T12:44:37.236Z",
+      "started_at": "2026-10-22T07:42:52.084Z",
+      "ended_at": "2026-10-22T07:42:52.085Z",
       "duration_seconds": 2,
       "call_sid": null,
       "connected_successfully": false,
-      "created_at": "2026-08-22T12:44:37.176Z",
-      "updated_at": "2026-08-22T12:44:37.238Z"
+      "created_at": "2026-10-22T07:42:52.084Z",
+      "updated_at": "2026-10-22T07:42:52.086Z"
     },
     {
       "id": "rapid-call-id-2",
@@ -79,43 +79,13 @@
       "receiver_number": "112233",
       "state": "ENDED",
       "is_incoming": true,
-      "started_at": "2026-08-22T12:44:37.298Z",
-      "ended_at": "2026-08-22T12:44:37.361Z",
+      "started_at": "2026-10-22T07:42:52.086Z",
+      "ended_at": "2026-10-22T07:42:52.088Z",
       "duration_seconds": 2,
       "call_sid": null,
       "connected_successfully": false,
-      "created_at": "2026-08-22T12:44:37.300Z",
-      "updated_at": "2026-08-22T12:44:37.362Z"
-    },
-    {
-      "id": "rapid-call-id-3",
-      "initiator_device": "realme_c3_1",
-      "initiator_number": null,
-      "receiver_number": "112233",
-      "state": "ENDED",
-      "is_incoming": true,
-      "started_at": "2026-08-22T12:44:37.424Z",
-      "ended_at": "2026-08-22T12:44:37.486Z",
-      "duration_seconds": 2,
-      "call_sid": null,
-      "connected_successfully": false,
-      "created_at": "2026-08-22T12:44:37.426Z",
-      "updated_at": "2026-08-22T12:44:37.487Z"
-    },
-    {
-      "id": "rapid-call-id-4",
-      "initiator_device": "realme_c3_1",
-      "initiator_number": null,
-      "receiver_number": "112233",
-      "state": "ENDED",
-      "is_incoming": true,
-      "started_at": "2026-08-22T12:44:37.549Z",
-      "ended_at": "2026-08-22T12:44:37.611Z",
-      "duration_seconds": 2,
-      "call_sid": null,
-      "connected_successfully": false,
-      "created_at": "2026-08-22T12:44:37.550Z",
-      "updated_at": "2026-08-22T12:44:37.612Z"
+      "created_at": "2026-10-22T07:42:52.086Z",
+      "updated_at": "2026-10-22T07:42:52.088Z"
     }
   ],
   "iceCandidates": []

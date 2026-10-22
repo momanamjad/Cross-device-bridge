@@ -12,6 +12,7 @@ import { prisma } from "./src/config/database";
 import { hashToken } from "./src/lib/crypto";
 import { WebRTCSignalServer } from "./src/services/webrtcSignal";
 import { VoiceBridgeManager } from "./src/services/voiceBridgeManager";
+import { ESP32VoiceBridgeService } from "./src/services/esp32VoiceBridge";
 
 async function runTests() {
   console.log("==================================================");
@@ -162,6 +163,7 @@ async function runTests() {
 
   clientSocket.disconnect();
   httpServer.close();
+  ESP32VoiceBridgeService.stop();
   console.log("✔ TEST 5 PASSED: Clean teardown verified.\n");
 
   console.log("==================================================");

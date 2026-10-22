@@ -34,7 +34,7 @@ export class ESP32VoiceBridgeService {
   private static startUdpListener() {
     if (this.udpSocket) return;
 
-    this.udpSocket = dgram.createSocket("udp4");
+    this.udpSocket = dgram.createSocket({ type: "udp4", reuseAddr: true });
 
     this.udpSocket.on("listening", () => {
       const addr = this.udpSocket?.address();

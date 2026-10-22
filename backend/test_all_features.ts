@@ -4,6 +4,8 @@ import { createServer } from "http";
 import { io as ClientIo, Socket } from "socket.io-client";
 import { env } from "./src/config/environment";
 import { encryptPayload, decryptPayload } from "./src/lib/crypto";
+import { ESP32VoiceBridgeService } from "./src/services/esp32VoiceBridge";
+import { PCAudioBridgeService } from "./src/services/pcAudioBridge";
 
 async function runTests() {
   console.log("==================================================");
@@ -290,6 +292,9 @@ async function runTests() {
     if (androidSocket) androidSocket.disconnect();
     if (iphoneSocket) iphoneSocket.disconnect();
     server.close();
+    ESP32VoiceBridgeService.stop();
+    PCAudioBridgeService.stopBridge();
+    process.exit(0);
   }
 }
 

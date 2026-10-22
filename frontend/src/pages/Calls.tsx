@@ -1,7 +1,6 @@
 import { useSelector } from "react-redux";
 import { RootState } from "../store/index";
 import { useWebRTC } from "../hooks/useWebRTC";
-import { IncomingCallModal } from "../components/IncomingCallModal";
 import { ActiveCallScreen } from "../components/ActiveCallScreen";
 import { DialerScreen } from "../components/DialerScreen";
 import { CallHistoryScreen } from "../components/CallHistoryScreen";
@@ -27,14 +26,7 @@ export function CallsPage() {
         </div>
       )}
 
-      {/* Conditional Call UI Render */}
-      {incomingCall && !activeCall && (
-        <IncomingCallModal
-          call={incomingCall}
-          onAccept={webrtc.acceptCall}
-          onReject={webrtc.rejectCall}
-        />
-      )}
+
 
       {activeCall && (
         <ActiveCallScreen

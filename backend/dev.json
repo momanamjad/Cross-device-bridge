@@ -6,11 +6,11 @@
       "deviceName": "Realme C21-Y Test",
       "deviceType": "android",
       "osVersion": "11",
-      "tokenHash": "4ebb5110ed3ef72db97cdd41d4f70c413c90f13e8abfc28dbb2b6ea5868831ab",
+      "tokenHash": "9e30ea7cc944171cd89aaed7bf987f392d0e1880893da8a342b4323aef98fef0",
       "isActive": true,
       "createdAt": "2026-09-16T11:37:54.962Z",
-      "updatedAt": "2026-09-16T11:40:02.571Z",
-      "lastSeen": "2026-09-16T11:40:02.569Z"
+      "updatedAt": "2026-10-22T07:42:22.693Z",
+      "lastSeen": "2026-10-22T07:42:22.692Z"
     },
     {
       "id": "78m8c7fmu41130n",
@@ -18,11 +18,11 @@
       "deviceName": "iPhone Client",
       "deviceType": "ios",
       "osVersion": "iOS 17.5",
-      "tokenHash": "dc338bce4b98f6a903071c8938f7b2f8d02910455343c3e673ab02f6fe13b6a8",
+      "tokenHash": "2f4b75b83b511aa5023f311710758621c45008414475c7a47ccb7cd8390b9e76",
       "isActive": true,
       "createdAt": "2026-09-16T11:37:55.079Z",
-      "updatedAt": "2026-09-16T11:40:05.625Z",
-      "lastSeen": "2026-09-16T11:40:05.623Z"
+      "updatedAt": "2026-10-22T07:42:23.606Z",
+      "lastSeen": "2026-10-22T07:42:23.606Z"
     },
     {
       "id": "2khtmytmv0wc4s5",
@@ -33,7 +33,19 @@
       "tokenHash": "a2997595acc57957b5d2fc93a2aaff3f89e95191e3a29fc9857469d8b1e7254d",
       "isActive": true,
       "createdAt": "2026-10-09T11:42:56.308Z",
-      "updatedAt": "2026-10-09T11:42:56.308Z"
+      "updatedAt": "2026-10-22T07:42:41.306Z"
+    },
+    {
+      "id": "u0o7yvwmvj6n8ii",
+      "externalId": "test_device_pc",
+      "deviceName": "Test PC",
+      "deviceType": "windows",
+      "osVersion": "11",
+      "tokenHash": "9066b6ff1821fe347c839916cfdbc6e2cc82d0e24853f1ad4fa94760212121f6",
+      "isActive": true,
+      "createdAt": "2026-10-22T06:51:21.690Z",
+      "updatedAt": "2026-10-22T07:42:31.635Z",
+      "lastSeen": "2026-10-22T07:42:31.634Z"
     }
   ],
   "messages": [
@@ -63,9 +75,48 @@
       "timestamp": "2026-09-16T11:40:00.244Z",
       "synced": false,
       "createdAt": "2026-09-16T11:40:00.262Z"
+    },
+    {
+      "id": "he0b0dbmvj73q0z",
+      "deviceId": "k5snu4wmu4112xe",
+      "sender": "+923001234567",
+      "content": "Test SMS Verification Code: 4892",
+      "timestamp": "2026-10-22T07:04:10.851Z",
+      "synced": false,
+      "createdAt": "2026-10-22T07:04:10.883Z"
+    },
+    {
+      "id": "xf4mu5omvj8gu6n",
+      "deviceId": "k5snu4wmu4112xe",
+      "sender": "+923001234567",
+      "content": "Test SMS Verification Code: 4892",
+      "timestamp": "2026-10-22T07:42:22.411Z",
+      "synced": false,
+      "createdAt": "2026-10-22T07:42:22.415Z"
     }
   ],
-  "callNotifications": [],
+  "callNotifications": [
+    {
+      "id": "7l8tmlsmvj73qai",
+      "deviceId": "k5snu4wmu4112xe",
+      "caller": "03414978300",
+      "callState": "RINGING",
+      "timestamp": "2026-10-22T07:04:11.226Z",
+      "duration": 0,
+      "synced": true,
+      "createdAt": "2026-10-22T07:04:11.226Z"
+    },
+    {
+      "id": "69xpsfrmvj8guh9",
+      "deviceId": "k5snu4wmu4112xe",
+      "caller": "03414978300",
+      "callState": "RINGING",
+      "timestamp": "2026-10-22T07:42:22.797Z",
+      "duration": 0,
+      "synced": true,
+      "createdAt": "2026-10-22T07:42:22.797Z"
+    }
+  ],
   "calls": [
     {
       "id": "15a780c0-93b7-436a-8aae-824ed499b4cc",
@@ -111,6 +162,186 @@
       "connected_successfully": false,
       "created_at": "2026-10-09T11:42:56.484Z",
       "updated_at": "2026-10-09T11:42:57.457Z"
+    },
+    {
+      "id": "call_test_1792651882127",
+      "initiator_device": "realme_c3_1",
+      "initiator_number": null,
+      "receiver_number": "+923001234567",
+      "state": "ENDED",
+      "is_incoming": true,
+      "started_at": "2026-10-22T06:51:22.127Z",
+      "ended_at": "2026-10-22T06:51:24.049Z",
+      "duration_seconds": 2,
+      "call_sid": null,
+      "connected_successfully": false,
+      "created_at": "2026-10-22T06:51:22.128Z",
+      "updated_at": "2026-10-22T06:51:24.050Z"
+    },
+    {
+      "id": "call_esp32_1792651897588",
+      "initiator_device": "realme_c3_1",
+      "initiator_number": null,
+      "receiver_number": "+923001234567",
+      "state": "CONNECTING",
+      "is_incoming": true,
+      "started_at": "2026-10-22T06:51:37.588Z",
+      "ended_at": null,
+      "duration_seconds": 0,
+      "call_sid": null,
+      "connected_successfully": false,
+      "created_at": "2026-10-22T06:51:37.588Z",
+      "updated_at": "2026-10-22T06:51:37.720Z"
+    },
+    {
+      "id": "call_esp32_1792652024273",
+      "initiator_device": "realme_c3_1",
+      "initiator_number": null,
+      "receiver_number": "+923001234567",
+      "state": "ENDED",
+      "is_incoming": true,
+      "started_at": "2026-10-22T06:53:44.274Z",
+      "ended_at": "2026-10-22T06:53:45.310Z",
+      "duration_seconds": 3,
+      "call_sid": null,
+      "connected_successfully": false,
+      "created_at": "2026-10-22T06:53:44.274Z",
+      "updated_at": "2026-10-22T06:53:45.311Z"
+    },
+    {
+      "id": "2a27c6a1-610a-4381-b94b-f547f393e836",
+      "initiator_device": "realme_c3_1",
+      "initiator_number": null,
+      "receiver_number": "03414978300",
+      "state": "RINGING",
+      "is_incoming": true,
+      "started_at": "2026-10-22T07:04:11.141Z",
+      "ended_at": null,
+      "duration_seconds": 0,
+      "call_sid": null,
+      "connected_successfully": false,
+      "created_at": "2026-10-22T07:04:11.141Z",
+      "updated_at": "2026-10-22T07:04:11.141Z"
+    },
+    {
+      "id": "test-call-1792652651472",
+      "initiator_device": "iphone",
+      "initiator_number": null,
+      "receiver_number": "03009876543",
+      "state": "ENDED",
+      "is_incoming": false,
+      "started_at": "2026-10-22T07:04:11.559Z",
+      "ended_at": "2026-10-22T07:04:11.683Z",
+      "duration_seconds": 0,
+      "call_sid": null,
+      "connected_successfully": false,
+      "created_at": "2026-10-22T07:04:11.559Z",
+      "updated_at": "2026-10-22T07:04:11.684Z"
+    },
+    {
+      "id": "call_test_1792652678151",
+      "initiator_device": "realme_c3_1",
+      "initiator_number": null,
+      "receiver_number": "+923001234567",
+      "state": "ENDED",
+      "is_incoming": true,
+      "started_at": "2026-10-22T07:04:38.151Z",
+      "ended_at": "2026-10-22T07:04:40.051Z",
+      "duration_seconds": 2,
+      "call_sid": null,
+      "connected_successfully": false,
+      "created_at": "2026-10-22T07:04:38.152Z",
+      "updated_at": "2026-10-22T07:04:40.052Z"
+    },
+    {
+      "id": "call_esp32_1792652686324",
+      "initiator_device": "realme_c3_1",
+      "initiator_number": null,
+      "receiver_number": "+923001234567",
+      "state": "CONNECTING",
+      "is_incoming": true,
+      "started_at": "2026-10-22T07:04:46.325Z",
+      "ended_at": null,
+      "duration_seconds": 0,
+      "call_sid": null,
+      "connected_successfully": false,
+      "created_at": "2026-10-22T07:04:46.325Z",
+      "updated_at": "2026-10-22T07:04:46.416Z"
+    },
+    {
+      "id": "call_esp32_1792654731065",
+      "initiator_device": "realme_c3_1",
+      "initiator_number": null,
+      "receiver_number": "+923001234567",
+      "state": "ENDED",
+      "is_incoming": true,
+      "started_at": "2026-10-22T07:38:51.066Z",
+      "ended_at": "2026-10-22T07:38:52.096Z",
+      "duration_seconds": 3,
+      "call_sid": null,
+      "connected_successfully": false,
+      "created_at": "2026-10-22T07:38:51.066Z",
+      "updated_at": "2026-10-22T07:38:52.097Z"
+    },
+    {
+      "id": "534d7d5f-1d8d-482e-b5d2-8cdd9a8a8a13",
+      "initiator_device": "realme_c3_1",
+      "initiator_number": null,
+      "receiver_number": "03414978300",
+      "state": "RINGING",
+      "is_incoming": true,
+      "started_at": "2026-10-22T07:42:22.698Z",
+      "ended_at": null,
+      "duration_seconds": 0,
+      "call_sid": null,
+      "connected_successfully": false,
+      "created_at": "2026-10-22T07:42:22.699Z",
+      "updated_at": "2026-10-22T07:42:22.699Z"
+    },
+    {
+      "id": "test-call-1792654943061",
+      "initiator_device": "iphone",
+      "initiator_number": null,
+      "receiver_number": "03009876543",
+      "state": "ENDED",
+      "is_incoming": false,
+      "started_at": "2026-10-22T07:42:23.160Z",
+      "ended_at": "2026-10-22T07:42:23.293Z",
+      "duration_seconds": 0,
+      "call_sid": null,
+      "connected_successfully": false,
+      "created_at": "2026-10-22T07:42:23.160Z",
+      "updated_at": "2026-10-22T07:42:23.293Z"
+    },
+    {
+      "id": "call_test_1792654951930",
+      "initiator_device": "realme_c3_1",
+      "initiator_number": null,
+      "receiver_number": "+923001234567",
+      "state": "ENDED",
+      "is_incoming": true,
+      "started_at": "2026-10-22T07:42:31.931Z",
+      "ended_at": "2026-10-22T07:42:33.907Z",
+      "duration_seconds": 2,
+      "call_sid": null,
+      "connected_successfully": false,
+      "created_at": "2026-10-22T07:42:31.932Z",
+      "updated_at": "2026-10-22T07:42:33.908Z"
+    },
+    {
+      "id": "call_esp32_1792654961423",
+      "initiator_device": "realme_c3_1",
+      "initiator_number": null,
+      "receiver_number": "+923001234567",
+      "state": "ENDED",
+      "is_incoming": true,
+      "started_at": "2026-10-22T07:42:41.423Z",
+      "ended_at": "2026-10-22T07:42:42.416Z",
+      "duration_seconds": 3,
+      "call_sid": null,
+      "connected_successfully": false,
+      "created_at": "2026-10-22T07:42:41.424Z",
+      "updated_at": "2026-10-22T07:42:42.417Z"
     }
   ],
   "iceCandidates": []

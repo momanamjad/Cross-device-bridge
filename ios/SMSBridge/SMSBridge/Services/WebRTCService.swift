@@ -73,11 +73,14 @@ class WebRTCService: NSObject {
     }
     
     func processOfferAndAnswer(sdpOffer: String) async throws -> String {
+        guard let pc = peerConnection else {
+            throw NSError(domain: "WebRTCService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Peer connection not initialized"])
+        }
         let remoteDesc = RTCSessionDescription(type: .offer, sdp: sdpOffer)
         
         // 1. Set Remote Description (SDP Offer)
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            peerConnection?.setRemoteDescription(remoteDesc) { error in
+            pc.setRemoteDescription(remoteDesc) { error in
                 if let error = error {
                     continuation.resume(throwing: error)
                 } else {

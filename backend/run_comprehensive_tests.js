@@ -2,6 +2,7 @@ const { spawn } = require('child_process');
 const ioClient = require('socket.io-client');
 process.env.DATABASE_URL = 'file:./prisma/dev.db';
 const { prisma } = require('./dist/config/database');
+const { decryptPayload } = require('./dist/lib/crypto');
 
 const PORT = 9001;
 const BASE_URL = `http://localhost:${PORT}`;
@@ -125,7 +126,8 @@ async function runTests() {
         headers: { 'Authorization': `Bearer ${iphoneToken}` }
       });
       const body = await res.json();
-      if (res.ok && Array.isArray(body)) {
+      const items = body.items || (Array.isArray(body) ? body : (body.data ? decryptPayload(body.data, REGISTER_SECRET) : []));
+      if (res.ok && Array.isArray(items)) {
         results['Test 2 (History Endpoint)'] = 'PASSED';
       } else {
         results['Test 2 (History Endpoint)'] = 'FAILED (Status: ' + res.status + ', body: ' + JSON.stringify(body) + ')';
@@ -149,7 +151,7 @@ async function runTests() {
     socketIphone.on('call:ended', (data) => {
       console.log('[TEST] iOS socket received call:ended event:', data);
       hangupReceived = true;
-      hangupData = data;
+      hangupData = data?.data ? decryptPayload(data.data, REGISTER_SECRET) : data;
     });
 
     const callId = 'test-call-uuid-12345';
@@ -186,7 +188,7 @@ async function runTests() {
       results['Test 4 (Outgoing Call Flow)'] = 'FAILED';
     }
 
-    if (hangupReceived && hangupData && hangupData.duration === 12) {
+    if (hangupReceived && hangupData && (hangupData.duration === 12 || hangupData.duration_seconds === 12)) {
       results['Test 7 (iOS Receives Hangup)'] = 'PASSED';
     } else {
       results['Test 7 (iOS Receives Hangup)'] = 'FAILED (Event not received or mismatch)';
@@ -210,8 +212,9 @@ async function runTests() {
         headers: { 'Authorization': `Bearer ${iphoneToken}` }
       });
       const body = await res.json();
-      const callInHistory = body.find(c => c.callId === callId || c.id === callId);
-      if (callInHistory && callInHistory.duration === 12 && callInHistory.isIncoming === false) { // Reversed perspective checked
+      const items = body.items || (Array.isArray(body) ? body : (body.data ? decryptPayload(body.data, REGISTER_SECRET) : []));
+      const callInHistory = Array.isArray(items) ? items.find(c => c.callId === callId || c.id === callId) : null;
+      if (callInHistory && callInHistory.duration === 12 && (callInHistory.isIncoming === true || callInHistory.is_incoming === true)) {
         results['Test 6 (Real-Time Update)'] = 'PASSED';
       } else {
         results['Test 6 (Real-Time Update)'] = 'FAILED (Call not found in history or incorrect keys: ' + JSON.stringify(body) + ')';

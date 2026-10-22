@@ -25,17 +25,17 @@ class BackendService {
             throw NSError(domain: "BackendService", code: 401, userInfo: [NSLocalizedDescriptionKey: "Registration failed"])
         }
         
-        let jsonWrapper = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-        guard let encryptedStr = jsonWrapper?["data"] as? String else {
-            throw NSError(domain: "BackendService", code: 500, userInfo: [NSLocalizedDescriptionKey: "Invalid encrypted registration response"])
+        let jsonWrapper = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        if let token = jsonWrapper?["api_token"] as? String {
+            return token
         }
-        
-        let decrypted = try CryptoHelper.decryptPayload(encryptedStr, secret: secret)
-        let json = try JSONSerialization.jsonObject(with: decrypted) as? [String: Any]
-        guard let token = json?["api_token"] as? String else {
-            throw NSError(domain: "BackendService", code: 500, userInfo: [NSLocalizedDescriptionKey: "Invalid token response"])
+        if let encryptedStr = jsonWrapper?["data"] as? String,
+           let decrypted = try? CryptoHelper.decryptPayload(encryptedStr, secret: secret),
+           let json = try? JSONSerialization.jsonObject(with: decrypted) as? [String: Any],
+           let token = json?["api_token"] as? String {
+            return token
         }
-        return token
+        throw NSError(domain: "BackendService", code: 500, userInfo: [NSLocalizedDescriptionKey: "Invalid token response"])
     }
     
     func fetchMessages(host: String, port: Int, token: String, secret: String) async throws -> [SMSMessage] {
@@ -45,14 +45,14 @@ class BackendService {
         
         let (data, _) = try await URLSession.shared.data(for: request)
         
-        // Response is wrapped in { data: "encrypted_string" }
-        guard let wrapper = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let encryptedStr = wrapper["data"] as? String else {
-            throw CryptoError.invalidPayloadFormat
+        var rawDataToDecode = data
+        if let wrapper = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let encryptedStr = wrapper["data"] as? String,
+           let decryptedData = try? CryptoHelper.decryptPayload(encryptedStr, secret: secret) {
+            rawDataToDecode = decryptedData
         }
         
-        let decryptedData = try CryptoHelper.decryptPayload(encryptedStr, secret: secret)
-        let response = try JSONDecoder().decode(MessageListResponse.self, from: decryptedData)
+        let response = try JSONDecoder().decode(MessageListResponse.self, from: rawDataToDecode)
         return response.data.map {
             SMSMessage(id: $0.id, sender: $0.sender, content: $0.message, timestamp: ISO8601DateFormatter().date(from: $0.timestamp) ?? Date())
         }
@@ -65,14 +65,14 @@ class BackendService {
         
         let (data, _) = try await URLSession.shared.data(for: request)
         
-        // Response is wrapped in { data: "encrypted_string" }
-        guard let wrapper = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let encryptedStr = wrapper["data"] as? String else {
-            throw CryptoError.invalidPayloadFormat
+        var rawDataToDecode = data
+        if let wrapper = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let encryptedStr = wrapper["data"] as? String,
+           let decryptedData = try? CryptoHelper.decryptPayload(encryptedStr, secret: secret) {
+            rawDataToDecode = decryptedData
         }
         
-        let decryptedData = try CryptoHelper.decryptPayload(encryptedStr, secret: secret)
-        let response = try JSONDecoder().decode(CallListResponse.self, from: decryptedData)
+        let response = try JSONDecoder().decode(CallListResponse.self, from: rawDataToDecode)
         return response.data.map {
             let isIncomingCall = $0.isIncoming ?? $0.is_incoming ?? ($0.state != "OUTGOING")
             return Call(

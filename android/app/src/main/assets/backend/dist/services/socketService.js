@@ -67,7 +67,12 @@ function initSocket(httpServer) {
                     packet[1] = (0, crypto_1.decryptPayload)(packet[1].data, environment_1.env.registerSecret);
                 }
                 catch (err) {
-                    logger_1.logger.error({ err }, "Failed to decrypt incoming socket payload");
+                    logger_1.logger.warn({ err }, "Failed to decrypt incoming socket payload, checking for plaintext fallback");
+                    const p = packet[1];
+                    if (p.call_id || p.phone_number || p.caller_number || p.sdp_offer || p.sdp_answer || p.candidate || p.id || p.message) {
+                        delete p.data;
+                        return next();
+                    }
                     return next(new Error("Decryption failed"));
                 }
             }

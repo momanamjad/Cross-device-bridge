@@ -18,7 +18,8 @@ class CallKitManager: NSObject, ObservableObject {
         let configuration = CXProviderConfiguration()
         configuration.supportsVideo = false
         configuration.maximumCallsPerCallGroup = 1
-        configuration.supportedHandleTypes = [.phoneNumber]
+        configuration.supportedHandleTypes = [.phoneNumber, .generic]
+        configuration.includesCallsInRecents = true
         
         provider = CXProvider(configuration: configuration)
         callController = CXCallController()
@@ -33,10 +34,14 @@ class CallKitManager: NSObject, ObservableObject {
         stringCallIDMap[id] = uuid
         
         let update = CXCallUpdate()
-        update.remoteHandle = CXHandle(type: .phoneNumber, value: handle)
+        let cleanHandle = handle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Unknown" : handle
+        let isNumeric = cleanHandle.rangeOfCharacter(from: CharacterSet.decimalDigits) != nil
+        update.remoteHandle = CXHandle(type: isNumeric ? .phoneNumber : .generic, value: cleanHandle)
         update.hasVideo = false
-        if let callerName = callerName {
+        if let callerName = callerName, !callerName.isEmpty {
             update.localizedCallerName = callerName
+        } else if !isNumeric {
+            update.localizedCallerName = cleanHandle
         }
         
         provider.reportNewIncomingCall(with: uuid, update: update) { error in

@@ -22,7 +22,8 @@ object RetrofitClient {
         val moshi = Moshi.Builder()
             .add(KotlinJsonAdapterFactory())
             .build()
-        val normalized = if (baseUrl.endsWith("/")) baseUrl else "$baseUrl/"
+        val sanitized = baseUrl.replace("://localhost", "://127.0.0.1")
+        val normalized = if (sanitized.endsWith("/")) sanitized else "$sanitized/"
         return Retrofit.Builder()
             .baseUrl(normalized)
             .client(client)

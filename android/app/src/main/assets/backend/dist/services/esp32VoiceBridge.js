@@ -24,7 +24,7 @@ class ESP32VoiceBridgeService {
     static startUdpListener() {
         if (this.udpSocket)
             return;
-        this.udpSocket = dgram_1.default.createSocket("udp4");
+        this.udpSocket = dgram_1.default.createSocket({ type: "udp4", reuseAddr: true });
         this.udpSocket.on("listening", () => {
             const addr = this.udpSocket?.address();
             winstonLogger_1.winstonLogger.info(`ESP32VoiceBridge: UDP listener active on port ${addr?.port}`);

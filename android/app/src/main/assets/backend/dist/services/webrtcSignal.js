@@ -313,14 +313,25 @@ class WebRTCSignalServer {
         else {
             targetDevice = "iphone";
             const encrypted = (0, crypto_1.encryptPayload)(data, environment_1.env.registerSecret);
-            io.to(`device_ext:${targetDevice}`).emit(event, { data: encrypted, ...data });
+            const payload = { data: encrypted, ...data };
+            io.to(`device_ext:${targetDevice}`).emit(event, payload);
+            if (data?.call_id) {
+                io.to(`call_${data.call_id}`).emit(event, payload);
+            }
             // In case the iPhone scanned the Android QR code and inherited the Android token,
-            // also deliver to any socket that is an iOS client or web client
+            // also deliver to any connected client that isn't the active Android telephony emitter
             const sockets = await io.fetchSockets();
             for (const s of sockets) {
                 const ua = String(s.handshake.headers["user-agent"] || "").toLowerCase();
-                if (s.data.externalId === "iphone" || ua.includes("cfnetwork") || ua.includes("iphone") || ua.includes("ios") || ua.includes("darwin")) {
-                    s.emit(event, { data: encrypted, ...data });
+                if (s.data.externalId === "iphone" ||
+                    ua.includes("cfnetwork") ||
+                    ua.includes("iphone") ||
+                    ua.includes("ios") ||
+                    ua.includes("darwin") ||
+                    ua.includes("mozilla") ||
+                    ua.includes("safari") ||
+                    s.data.deviceId !== "android") {
+                    s.emit(event, payload);
                 }
             }
         }

@@ -20,12 +20,12 @@ const environment_1 = require("../config/environment");
 // Request schemas
 exports.restIncomingSchema = zod_1.z.object({
     caller_number: zod_1.z.string().min(1),
-    device_id: zod_1.z.string().min(1),
+    device_id: zod_1.z.string().min(1).optional(),
     timestamp: zod_1.z.number().int().positive().optional(),
 });
 exports.restOutgoingSchema = zod_1.z.object({
     phone_number: zod_1.z.string().min(1),
-    device_id: zod_1.z.string().min(1),
+    device_id: zod_1.z.string().min(1).optional(),
 });
 exports.restEndedSchema = zod_1.z.object({
     call_id: zod_1.z.string().min(1),
@@ -45,9 +45,7 @@ async function handleIncomingCallRest(req, res, next) {
         if (device.externalId === "iphone") {
             throw new errorHandler_1.HttpError(403, "iPhones are not authorized to signal incoming SIM calls");
         }
-        if (body.device_id !== device.externalId) {
-            throw new errorHandler_1.HttpError(400, "device_id in request body does not match authorized device");
-        }
+        const targetDeviceId = body.device_id || device.externalId;
         const callId = (0, crypto_1.randomUUID)();
         await webrtcSignal_1.WebRTCSignalServer.handleIncomingCall(body.caller_number, callId);
         // Also persist in callNotification table so GET /api/calls immediately displays it in iOS Calls tab

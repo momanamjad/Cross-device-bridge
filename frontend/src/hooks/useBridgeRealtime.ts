@@ -1,4 +1,6 @@
 import { useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { setIncomingCall } from "../store/callSlice";
 import { createApi } from "../services/api";
 import {
   confirmSocketCall,
@@ -17,6 +19,7 @@ function notify(title: string, body: string) {
 }
 
 export function useBridgeRealtime() {
+  const dispatch = useDispatch();
   const apiUrl = useBridgeStore((s) => s.apiUrl);
   const token = useBridgeStore((s) => s.token);
   const setStatus = useBridgeStore((s) => s.setStatus);
@@ -67,6 +70,17 @@ export function useBridgeRealtime() {
         addCall(call);
         confirmSocketCall(call.id);
         notify("Incoming call", `${call.caller} (${call.state})`);
+        if (call.state === "RINGING") {
+          dispatch(
+            setIncomingCall({
+              call_id: call.id,
+              caller_number: call.caller,
+              started_at: new Date(call.timestamp).getTime(),
+              is_incoming: true,
+              status: "ringing",
+            }),
+          );
+        }
       },
     });
 

@@ -50,6 +50,7 @@ class WebSocketService: ObservableObject {
             .log(false),
             .compress,
             .connectParams(["token": token]),
+            .extraHeaders(["User-Agent": "SMSBridge-iOS/1.0 iPhone"]),
             .reconnects(true),
             .reconnectWait(2)
         ])
@@ -76,21 +77,49 @@ class WebSocketService: ObservableObject {
         }
         
         func decrypt(_ data: [Any]) -> [String: Any]? {
-            guard let wrapper = data.first as? [String: Any],
-                  let encryptedStr = wrapper["data"] as? String else { return nil }
-            guard let decrypted = try? CryptoHelper.decryptPayload(encryptedStr, secret: secret),
-                  let dict = try? JSONSerialization.jsonObject(with: decrypted) as? [String: Any] else { return nil }
-            return dict
+            guard let wrapper = data.first as? [String: Any] else { return nil }
+            if let encryptedStr = wrapper["data"] as? String {
+                if let decrypted = try? CryptoHelper.decryptPayload(encryptedStr, secret: secret),
+                   let dict = try? JSONSerialization.jsonObject(with: decrypted) as? [String: Any] {
+                    return dict
+                } else {
+                    AppLog("Decryption failed with secret, checking for plaintext fields in wrapper", tag: "CRYPTO")
+                }
+            }
+            // Fallback: If wrapper contains event fields directly, return it
+            if wrapper["call_id"] != nil || wrapper["caller_number"] != nil || wrapper["caller"] != nil ||
+               wrapper["id"] != nil || wrapper["sender"] != nil || wrapper["content"] != nil ||
+               wrapper["message"] != nil || wrapper["candidate"] != nil || wrapper["sdp_offer"] != nil ||
+               wrapper["sdp_answer"] != nil || wrapper["state"] != nil {
+                return wrapper
+            }
+            return nil
         }
         
         socket?.on("call:incoming") { [weak self] data, _ in
             guard let dict = decrypt(data),
                   let callId = dict["call_id"] as? String,
-                  let callerNumber = dict["caller_number"] as? String else { return }
+                  let callerNumber = (dict["caller_number"] as? String) ?? (dict["caller"] as? String) ?? (dict["phone_number"] as? String) else {
+                AppLog("Failed to parse incoming call from payload: \(data)", tag: "CALL")
+                return
+            }
             
             AppLog("Incoming call received: \(callerNumber) (ID: \(callId))", tag: "CALL")
             let info = CallInfo(callId: callId, callerId: callerNumber, callerName: nil, isIncoming: true, timestamp: Date())
             self?.onIncomingCall?(info)
+        }
+
+        // Also listen to call:new in case incoming call was pushed via legacy call route
+        socket?.on("call:new") { [weak self] data, _ in
+            guard let dict = decrypt(data) else { return }
+            let state = (dict["state"] as? String ?? dict["callState"] as? String ?? "").uppercased()
+            if state == "RINGING" {
+                let callId = (dict["call_id"] as? String) ?? (dict["id"] as? String) ?? UUID().uuidString
+                let caller = (dict["caller"] as? String) ?? (dict["caller_number"] as? String) ?? "Unknown"
+                AppLog("Incoming ringing call detected via call:new: \(caller) (ID: \(callId))", tag: "CALL")
+                let info = CallInfo(callId: callId, callerId: caller, callerName: nil, isIncoming: true, timestamp: Date())
+                self?.onIncomingCall?(info)
+            }
         }
         
         socket?.on("call:connected") { [weak self] data, _ in
@@ -157,26 +186,19 @@ class WebSocketService: ObservableObject {
             self?.emit("message:confirm", ["id": id])
         }
 
-
-        
         socket?.connect()
     }
     
     func emit(_ event: String, _ items: [String: Any]) {
         AppLog("Emitting [\(event)]: \(items.keys.joined(separator: ", "))", tag: "WS")
-        guard let secret = UserDefaults.standard.string(forKey: "register_secret") else {
-            socket?.emit(event, with: [items], completion: nil)
-            return
+        var payload = items
+        if let secret = UserDefaults.standard.string(forKey: "register_secret"), !secret.isEmpty {
+            if let data = try? JSONSerialization.data(withJSONObject: items),
+               let encrypted = try? CryptoHelper.encryptPayload(data, secret: secret) {
+                payload["data"] = encrypted
+            }
         }
-        
-        do {
-            let data = try JSONSerialization.data(withJSONObject: items)
-            let encrypted = try CryptoHelper.encryptPayload(data, secret: secret)
-            socket?.emit(event, with: [["data": encrypted]], completion: nil)
-        } catch {
-            AppLog("Encryption failed for emit \(event): \(error)", tag: "WS")
-            socket?.emit(event, with: [items], completion: nil)
-        }
+        socket?.emit(event, with: [payload], completion: nil)
     }
     
     private var backgroundTask: UIBackgroundTaskIdentifier = .invalid

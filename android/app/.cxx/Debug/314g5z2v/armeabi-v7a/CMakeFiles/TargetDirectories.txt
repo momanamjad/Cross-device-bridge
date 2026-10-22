@@ -1,3 +1,0 @@
-C:/Users/DELL/Desktop/device bridge/android/app/.cxx/Debug/314g5z2v/armeabi-v7a/CMakeFiles/node-bridge.dir
-C:/Users/DELL/Desktop/device bridge/android/app/.cxx/Debug/314g5z2v/armeabi-v7a/CMakeFiles/edit_cache.dir
-C:/Users/DELL/Desktop/device bridge/android/app/.cxx/Debug/314g5z2v/armeabi-v7a/CMakeFiles/rebuild_cache.dir
