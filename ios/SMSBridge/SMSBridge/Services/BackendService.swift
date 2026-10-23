@@ -32,7 +32,7 @@ class BackendService {
         if let encryptedStr = jsonWrapper?["data"] as? String,
            let decrypted = try? CryptoHelper.decryptPayload(encryptedStr, secret: secret),
            let json = try? JSONSerialization.jsonObject(with: decrypted) as? [String: Any],
-           let token = json?["api_token"] as? String {
+           let token = json["api_token"] as? String {
             return token
         }
         throw NSError(domain: "BackendService", code: 500, userInfo: [NSLocalizedDescriptionKey: "Invalid token response"])
